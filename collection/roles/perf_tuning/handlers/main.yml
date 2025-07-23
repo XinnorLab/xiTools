@@ -4,16 +4,20 @@
 ---
 - name: update grub on Debian/Ubuntu
   ansible.builtin.command: update-grub
+  listen: update grub
   when: ansible_os_family == 'Debian'
 
 - name: update grub on RedHat
   ansible.builtin.command: grub2-mkconfig -o /boot/grub2/grub.cfg
+  listen: update grub
   when: ansible_os_family == 'RedHat'
 
 - name: rebuild initramfs on Debian/Ubuntu
   ansible.builtin.command: update-initramfs -u -k all
+  listen: rebuild initramfs
   when: ansible_os_family == 'Debian'
 
 - name: rebuild initramfs on RedHat
   ansible.builtin.command: dracut -f
+  listen: rebuild initramfs
   when: ansible_os_family == 'RedHat'
