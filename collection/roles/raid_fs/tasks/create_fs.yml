@@ -1,0 +1,61 @@
+- name: Query filesystem type on {{ item.data_device }}
+  ansible.builtin.command: blkid -s TYPE -o value {{ item.data_device }}
+  register: blkid_type
+  failed_when: false
+  changed_when: false
+
+- name: Query filesystem label on {{ item.data_device }}
+  ansible.builtin.command: blkid -s LABEL -o value {{ item.data_device }}
+  register: blkid_label
+  failed_when: false
+  changed_when: false
+
+- name: Make filesystem {{ item.label }} on {{ item.data_device }}
+  ansible.builtin.command: >-
+    mkfs.xfs -f -L {{ item.label }} -d su={{ item.su_kb }}k,sw={{ item.sw }}
+    -l logdev={{ item.log_device }},size={{ item.log_size }}
+    -s size={{ item.sector_size }} {{ item.data_device }}
+  when: (xfs_force_mkfs | default(false) | bool) or blkid_type.stdout != 'xfs' or blkid_label.stdout != item.label
+  tags: [raid_fs, fs, mkfs]
+
+- name: Wait for block devices to settle
+  ansible.builtin.command: udevadm settle
+  changed_when: false
+  tags: [raid_fs, fs, mkfs]
+
+- name: Create mountpoint {{ item.mountpoint }}
+  ansible.builtin.file:
+    path: "{{ item.mountpoint }}"
+    state: directory
+    mode: '0755'
+  tags: [raid_fs, fs]
+
+- name: Compute mount unit parameters for {{ item.label }}
+  ansible.builtin.set_fact:
+    block_device_unit: >-
+      {{ item.data_device | regex_replace('^/','') | replace('/', '-') }}.device
+    log_device_unit: >-
+      {{ item.log_device | regex_replace('^/','') | replace('/', '-') }}.device
+    unit_opts: >-
+      {{ 'defaults' + (',' + item.mount_opts if (item.mount_opts | default('') | length > 0) else '') }}
+    mount_unit: >-
+      {{ item.mountpoint | regex_replace('^/','') | replace('/', '-') }}.mount
+  tags: [raid_fs, fs]
+
+- name: Deploy systemd mount unit for {{ item.label }}
+  ansible.builtin.template:
+    src: mount.unit.j2
+    dest: "/etc/systemd/system/{{ mount_unit }}"
+    mode: '0644'
+  notify: reload systemd
+  tags: [raid_fs, fs]
+
+- name: Reload systemd before enabling mount unit
+  meta: flush_handlers
+
+- name: Enable and start mount unit for {{ item.label }}
+  ansible.builtin.systemd:
+    name: "{{ mount_unit }}"
+    enabled: true
+    state: started
+  tags: [raid_fs, fs]

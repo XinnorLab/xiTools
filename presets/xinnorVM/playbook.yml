@@ -1,0 +1,16 @@
+---
+- name: Full storage-node configuration (common → OFED → xiRAID → NFS → perf)
+  hosts: storage_nodes
+  gather_facts: true
+  vars:
+    perf_disable_cpupower: true
+    perf_nr_requests: 0
+  roles:
+    - role: common
+    - role: doca_ofed
+    - role: net_controllers
+    - role: xiraid_classic  # EULA is accepted automatically
+    - role: raid_fs
+    - role: exports       # manage /etc/exports
+    - role: nfs_server    # configure kernel NFS server
+    - role: perf_tuning

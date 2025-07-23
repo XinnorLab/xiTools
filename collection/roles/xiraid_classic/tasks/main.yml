@@ -1,0 +1,73 @@
+---
+- name: Remove legacy /etc/xiraid directory if present
+  ansible.builtin.file:
+    path: /etc/xiraid
+    state: absent
+  tags: [xiraid, cleanup]
+
+- name: Ensure kernel headers present (xiRAID DKMS needs them)
+  ansible.builtin.apt:
+    name: "linux-headers-{{ ansible_kernel }}"
+    state: present
+  tags: [xiraid, deps]
+
+- name: Remove any existing xiRAID repo package before download
+  ansible.builtin.file:
+    path: "/tmp/{{ xiraid_repo_pkg }}"
+    state: absent
+  tags: [xiraid, cleanup]
+
+- name: Download xiRAID repo package
+  ansible.builtin.get_url:
+    url: "{{ xiraid_repo_pkg_url }}"
+    dest: "/tmp/{{ xiraid_repo_pkg }}"
+    mode: '0644'
+    force: no
+  register: xiraid_repo_dl
+  tags: [xiraid, download]
+
+- name: Install xiRAID repo package
+  ansible.builtin.apt:
+    deb: "/tmp/{{ xiraid_repo_pkg }}"
+    state: present
+  when: xiraid_repo_dl.changed
+  register: xiraid_repo_added
+  tags: [xiraid, repo]
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  tags: [xiraid, install]
+
+- name: Install xiRAID core package
+  ansible.builtin.command:
+    cmd: "apt-get install --reinstall -y {{ xiraid_packages | join(' ') }}"
+  register: xiraid_pkgs
+  changed_when: false
+  tags: [xiraid, install]
+
+- name: Accept xiRAID EULA
+  ansible.builtin.command: xicli settings eula modify -s accepted
+  when: xiraid_accept_eula | bool
+  changed_when: false
+  tags: [xiraid, eula]
+
+# Optional verification section
+- name: Verify xiRAID kernel module loaded
+  ansible.builtin.shell: "lsmod | grep -q xiraid"
+  changed_when: false
+  register: mod_check
+  failed_when: mod_check.rc != 0
+  tags: [xiraid, verify]
+
+- name: Show xiRAID version
+  ansible.builtin.command: "xicli -v"
+  changed_when: false
+  tags: [xiraid, verify]
+
+- name: Reboot to complete xiRAID installation (if requested)
+  ansible.builtin.reboot:
+    reboot_timeout: 1200
+    msg: "Reboot by xiraid_classic role after install"
+  when: xiraid_pkgs is changed and xiraid_auto_reboot | bool
+  tags: [xiraid, reboot]

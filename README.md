@@ -1,17 +1,30 @@
-#  xiTools: Storage System Optimization and Testing Suite
+# xiNAS
 
+This repository contains scripts and Ansible playbooks used to provision xiNAS nodes.
 
-xiTools is a comprehensive collection of scripts designed to streamline the optimization and testing process for storage systems. Whether you are a system administrator, storage engineer, or performance enthusiast, xiTools empowers you to fine-tune your storage system settings, maximize performance, and conduct rigorous tests with ease.
+## Getting started
 
-Key Features:
+1. Run `prepare_system.sh` on the target host (use the `-e` option for expert mode). Use `-u` to update the repository without launching any menus. This installs required packages including `yq` version 4, `whiptail`, and Ansible, then clones the repository.
+   The script immediately launches a simplified start menu in default mode to enter the license and choose a preset. Use `-e` to access the full interactive menu with additional options such as updating the repository or saving the current configuration as a new preset.
+   Both menus now include a **Collect Data** option for gathering system information into a tar archive and uploading it via `transfer.sh`. The upload server is configured automatically and listens on port 8080. You can override it by setting the `TRANSFER_SERVER` environment variable if needed.
 
-1. System Settings Checker: With xiTools, you can effortlessly verify the current storage system settings against recommended best practices. It scans your system configuration, identifies potential bottlenecks or misconfigurations, and provides actionable recommendations for optimization.
+   Example:
+   ```bash
+   export TRANSFER_SERVER="http://178.253.23.152:8080"
+   ./collect_data.sh
+   ```
+2. Execute `startup_menu.sh` separately if you need the complete configuration menu outside of the expert mode. Any presets you create in expert mode will also be available here and in the simplified menu. It also allows setting a custom hostname.
+3. To apply the configuration, choose **Install** from the menu.
+   The playbook will run at that point, executing all configured roles. An **Exit** option is available if you want to leave without running the playbook.
+4. To configure an NFS client on another system, run `sudo ./client_setup.sh`. Root
+   privileges are required to install packages, create the mount point and mount
+   the exported share. If you only need the client pieces, copy the contents of
+   the `client_repo` directory into a separate repository and run the script
+   from there. If you choose to install DOCA OFED using the provided playbook,
+   the script will automatically install Ansible packages when needed.
 
-2. Performance Tuning Toolkit: xiTools offers a range of powerful scripts that enable you to fine-tune your storage system for optimal performance. It provides a guided interface to adjust critical parameters, such as disk I/O settings, caching mechanisms, and network configurations, ensuring your system is operating at its full potential.
+The `prepare_system.sh` script installs dependencies required by the interactive helper scripts. The helper scripts rely on the [`mikefarah/yq`](https://github.com/mikefarah/yq) binary (v4+). If you encounter errors such as `jq: error: env/1 is not defined`, make sure this version of `yq` is installed by re-running `prepare_system.sh` or installing it manually.
+Earlier versions of the RAID configuration script failed with `'//' expects 2 args but there is 1` when no spare pool existed. The script now creates the pool automatically the first time you enter devices.
+You can inspect all `yq` binaries with `which -a yq`. If multiple paths are listed, reorder your `PATH` so `/usr/local/bin/yq` precedes others or remove the older version entirely.
 
-3. Comprehensive Testing Framework: Test the limits of your storage system with xiTools' versatile testing framework. Whether you need to measure throughput, latency, or response times under different workloads, xiTools offers a suite of benchmarking and load generation tools. Generate realistic workloads, simulate various scenarios, and evaluate the performance of your storage system accurately.
-
-4. Detailed Reporting and Analysis: xiTools generates comprehensive reports that summarize the results of your system checks and performance tests. These reports provide valuable insights into system health, identify areas of improvement, and assist in decision-making processes.
-
-5. Extensibility and Customization: Built with flexibility in mind, xiTools allows you to extend its functionality by adding custom scripts and modules. Tailor the suite to your specific requirements and integrate it seamlessly into your existing workflows.
-
+The `configure_hostname.sh` script updates `/etc/hosts` so that the system's hostname shares the `127.0.0.1` entry with `localhost`.

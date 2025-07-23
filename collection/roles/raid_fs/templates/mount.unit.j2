@@ -1,0 +1,15 @@
+[Unit]
+Description=xiRAID Classic {{ item.mountpoint | regex_replace('^.*/', '') }}
+Requires={{ block_device_unit }} {{ log_device_unit }}
+After={{ block_device_unit }} {{ log_device_unit }}
+Before=umount.target
+Conflicts=umount.target
+
+[Mount]
+What={{ item.data_device }}
+Where={{ item.mountpoint }}
+Options={{ unit_opts }}
+Type=xfs
+
+[Install]
+WantedBy=local-fs.target
