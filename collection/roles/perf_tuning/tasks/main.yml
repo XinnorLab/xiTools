@@ -2,13 +2,23 @@
 # tasks/main.yml
 # -------------------------------------------------------------
 ---
-- name: Install auxiliary packages needed by tuning tasks
+- name: Install auxiliary packages on Debian/Ubuntu
   ansible.builtin.apt:
     name:
       - cpufrequtils
       - linux-tools-common
       - tuned
     state: present
+  when: ansible_os_family == 'Debian'
+  tags: [packages]
+
+- name: Install auxiliary packages on RedHat
+  ansible.builtin.yum:
+    name:
+      - tuned
+      - kernel-tools
+    state: present
+  when: ansible_os_family == 'RedHat'
   tags: [packages]
 
 # ===== Kernel boot parameters =====

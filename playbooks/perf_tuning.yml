@@ -1,0 +1,6 @@
+---
+- name: Apply performance tuning
+  hosts: storage_nodes
+  gather_facts: true
+  roles:
+    - role: perf_tuning
