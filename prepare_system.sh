@@ -21,8 +21,17 @@ done
 
 # Install required packages unless only updating the repository
 if [ "$UPDATE_ONLY" -eq 0 ]; then
-    sudo apt-get update -y
-    sudo apt-get install -y ansible git whiptail dialog wget
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update -y
+        sudo apt-get install -y ansible git whiptail dialog wget
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y ansible git newt dialog wget
+    elif command -v yum >/dev/null 2>&1; then
+        sudo yum install -y ansible git newt dialog wget
+    else
+        echo "Unsupported package manager. Install ansible, git, whiptail/newt, dialog, and wget manually." >&2
+        exit 1
+    fi
     # Install yq v4 for YAML processing used by configuration scripts
     sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64"
     sudo chmod +x /usr/local/bin/yq
