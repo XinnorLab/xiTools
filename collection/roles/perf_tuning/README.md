@@ -25,3 +25,5 @@ the `linux-tools-common` package, which the role installs automatically.
   roles:
     - perf_tuning
 ```
+
+Reference: [xiNNOR blog on performance tuning](https://xinnor.io/blog/performance-tuning)

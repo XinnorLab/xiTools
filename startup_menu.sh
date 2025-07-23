@@ -212,6 +212,17 @@ run_playbook() {
     return $?
 }
 
+run_perf_tuning() {
+    local playbook="$REPO_DIR/playbooks/perf_tuning.yml"
+    local inventory="inventories/lab.ini"
+    local os_name
+    os_name=$(source /etc/os-release && echo "$PRETTY_NAME")
+    whiptail --msgbox "Detected OS: $os_name" 8 60
+    if confirm_perf_tuning; then
+        ansible-playbook "$playbook" -i "$inventory" -v
+    fi
+}
+
 # Check for installed xiRAID packages and optionally remove them
 check_remove_xiraid() {
     local pkgs found repo_status log=/tmp/xiraid_remove.log
@@ -271,6 +282,12 @@ confirm_playbook() {
         role_list="${role_list}\n - ${r}: ${desc}"
     done
     whiptail --yesno --scrolltext "Run Ansible playbook to configure the system?\n\nThis will execute the following roles:${role_list}" 20 70
+}
+
+confirm_perf_tuning() {
+    local info_file="$REPO_DIR/collection/roles/perf_tuning/README.md"
+    [ -f "$info_file" ] && whiptail --title "Performance Tuning" --scrolltext --textbox "$info_file" 20 70
+    whiptail --yesno "Run performance tuning playbook?" 8 70
 }
 
 # Copy configuration files from a preset directory and optionally run its playbook
@@ -350,7 +367,7 @@ save_preset() {
 
 # Main menu loop
 while true; do
-    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 20 70 16 \
+    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 20 70 17 \
         1 "Configure Network" \
         2 "Set Hostname" \
         3 "Configure RAID" \
@@ -358,8 +375,9 @@ while true; do
         5 "Presets" \
         6 "Git Repository Configuration" \
         7 "Install" \
-        8 "Collect Data" \
-        9 "Exit" \
+        8 "Performance Tuning" \
+        9 "Collect Data" \
+        10 "Exit" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) configure_network ;;
@@ -376,8 +394,9 @@ while true; do
                 exit 0
             fi
             ;;
-        8) ./collect_data.sh ;;
-        9) exit 2 ;;
+        8) run_perf_tuning ;;
+        9) ./collect_data.sh ;;
+        10) exit 2 ;;
     esac
 done
 

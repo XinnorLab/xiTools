@@ -65,6 +65,17 @@ run_playbook() {
     return $?
 }
 
+run_perf_tuning() {
+    local playbook="$REPO_DIR/playbooks/perf_tuning.yml"
+    local inventory="inventories/lab.ini"
+    local os_name
+    os_name=$(source /etc/os-release && echo "$PRETTY_NAME")
+    whiptail --msgbox "Detected OS: $os_name" 8 60
+    if confirm_perf_tuning; then
+        ansible-playbook "$playbook" -i "$inventory" -v
+    fi
+}
+
 # Check for installed xiRAID packages and optionally remove them
 check_remove_xiraid() {
     local pkgs found repo_status log=/tmp/xiraid_remove.log
@@ -110,6 +121,12 @@ check_remove_xiraid() {
 
 confirm_playbook() {
     whiptail --yesno "Run Ansible playbook to configure the system?" 8 60
+}
+
+confirm_perf_tuning() {
+    local info_file="$REPO_DIR/collection/roles/perf_tuning/README.md"
+    [ -f "$info_file" ] && whiptail --title "Performance Tuning" --scrolltext --textbox "$info_file" 20 70
+    whiptail --yesno "Run performance tuning playbook?" 8 70
 }
 
 # Prompt for a list of systems and store them in the default inventory
@@ -192,12 +209,13 @@ choose_preset() {
 }
 
 while true; do
-    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 7 \
+    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 8 \
         1 "Enter Systems" \
         2 "Presets" \
         3 "Install" \
-        4 "Collect Data" \
-        5 "Exit" \
+        4 "Performance Tuning" \
+        5 "Collect Data" \
+        6 "Exit" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) enter_systems ;;
@@ -210,7 +228,8 @@ while true; do
                 exit 0
             fi
             ;;
-        4) ./collect_data.sh ;;
-        5) exit 2 ;;
+        4) run_perf_tuning ;;
+        5) ./collect_data.sh ;;
+        6) exit 2 ;;
     esac
 done
