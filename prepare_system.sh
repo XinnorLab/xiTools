@@ -2,17 +2,14 @@
 set -e
 
 usage() {
-    echo "Usage: $0 [-e] [-u]" >&2
-    echo "  -e  Expert mode with full startup menu" >&2
+    echo "Usage: $0 [-u]" >&2
     echo "  -u  Update repository and exit" >&2
     echo "  -h  Show this help message" >&2
 }
 
-EXPERT=0
 UPDATE_ONLY=0
-while getopts "ehu" opt; do
+while getopts "hu" opt; do
     case $opt in
-        e) EXPERT=1 ;;
         u) UPDATE_ONLY=1 ;;
         h) usage; exit 0 ;;
         *) usage; exit 1 ;;
@@ -60,24 +57,5 @@ fi
 # Ensure the hardware key utility is executable
 [ -x ./hwkey ] || chmod +x ./hwkey
 
-# In expert mode allow updating the repository from GitHub
-if [ "$EXPERT" -eq 1 ]; then
-    if whiptail --yesno "Update xiNAS code from GitHub?" 8 60; then
-        git reset --hard
-        git pull origin main
-    fi
-fi
-
-chmod +x startup_menu.sh simple_menu.sh
-
-if [ "$EXPERT" -eq 1 ]; then
-    ./startup_menu.sh
-    status=$?
-else
-    ./simple_menu.sh
-    status=$?
-fi
-
-if [ "$status" -eq 2 ]; then
-    exit 0
-fi
+chmod +x simple_menu.sh
+./simple_menu.sh
