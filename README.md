@@ -1,6 +1,6 @@
-# xiNAS
+# xiTools
 
-This repository contains scripts and Ansible playbooks used to provision xiNAS nodes.
+xiTools is a set of utilities for operating system optimization and automated deployment of xiRAID Classic.
 
 ## Getting started
 
