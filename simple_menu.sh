@@ -112,6 +112,26 @@ confirm_playbook() {
     whiptail --yesno "Run Ansible playbook to configure the system?" 8 60
 }
 
+# Prompt for a list of systems and store them in the default inventory
+enter_systems() {
+    local inv="inventories/lab.ini"
+    local current=""
+    if [ -f "$inv" ]; then
+        current=$(awk '!/^\[/ && NF {print $1}' "$inv" | paste -sd '\n' -)
+    fi
+    set +e
+    local hosts status
+    hosts=$(whiptail --inputbox "Enter systems list (one per line)" 20 70 "$current" 3>&1 1>&2 2>&3)
+    status=$?
+    set -e
+    [ $status -ne 0 ] && return
+    local tmp="$TMP_DIR/inventory"
+    echo "[storage_nodes]" > "$tmp"
+    echo "$hosts" | tr ',' '\n' | sed '/^\s*$/d' >> "$tmp"
+    mv "$tmp" "$inv"
+    whiptail --msgbox "Systems list saved to $inv" 8 60
+}
+
 apply_preset() {
     local preset="$1"
     local pdir="$REPO_DIR/presets/$preset"
@@ -157,18 +177,20 @@ choose_preset() {
 }
 
 while true; do
-    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 7 \
-        1 "Collect Data" \
-        2 "Enter License" \
-        3 "Presets" \
-        4 "Install" \
-        5 "Exit" \
+    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 8 \
+        1 "Enter Systems" \
+        2 "Collect Data" \
+        3 "Enter License" \
+        4 "Presets" \
+        5 "Install" \
+        6 "Exit" \
         3>&1 1>&2 2>&3)
     case "$choice" in
-        1) ./collect_data.sh ;;
-        2) enter_license ;;
-        3) choose_preset ;;
-        4)
+        1) enter_systems ;;
+        2) ./collect_data.sh ;;
+        3) enter_license ;;
+        4) choose_preset ;;
+        5)
             if check_license && check_remove_xiraid && confirm_playbook "playbooks/site.yml"; then
                 run_playbook "playbooks/site.yml" "inventories/lab.ini"
                 chmod +x post_install_menu.sh
@@ -176,6 +198,6 @@ while true; do
                 exit 0
             fi
             ;;
-        5) exit 2 ;;
+        6) exit 2 ;;
     esac
 done
