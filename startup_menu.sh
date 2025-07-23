@@ -15,7 +15,7 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 check_license() {
     local license_file="/tmp/license"
     if [ ! -f "$license_file" ]; then
-        whiptail --msgbox "License file $license_file not found. Please run 'Enter License' first." 10 60
+        whiptail --msgbox "License file $license_file not found. Please add the license file before continuing." 10 60
         return 1
     fi
     return 0
@@ -128,21 +128,19 @@ configure_nfs_shares() {
 
     while true; do
         local choice
-    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 20 70 16 \
-        1 "Enter License" \
-        2 "Configure Network" \
-        3 "Set Hostname" \
-        3 "Set Hostname" \
-        4 "Configure RAID" \
-        5 "Edit NFS Exports" \
-        6 "Presets" \
-        7 "Git Repository Configuration" \
-        8 "Install" \
-        9 "Exit" \
-        3>&1 1>&2 2>&3)
+        choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 20 70 15 \
+            1 "Configure Network" \
+            2 "Set Hostname" \
+            3 "Configure RAID" \
+            4 "Edit NFS Exports" \
+            5 "Presets" \
+            6 "Git Repository Configuration" \
+            7 "Install" \
+            8 "Exit" \
+            3>&1 1>&2 2>&3)
         case "$choice" in
-            1) ./configure_nfs_exports.sh --edit "$default_path" ;;
-            *) break ;;
+            4) ./configure_nfs_exports.sh --edit "$default_path" ;;
+            8) break ;;
         esac
     done
 }

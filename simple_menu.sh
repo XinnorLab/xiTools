@@ -10,7 +10,7 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 check_license() {
     local license_file="/tmp/license"
     if [ ! -f "$license_file" ]; then
-        whiptail --msgbox "License file $license_file not found. Please run 'Enter License' first." 10 60
+        whiptail --msgbox "License file $license_file not found. Please add the license file before continuing." 10 60
         return 1
     fi
     return 0
