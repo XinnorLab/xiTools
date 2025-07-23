@@ -115,21 +115,36 @@ confirm_playbook() {
 # Prompt for a list of systems and store them in the default inventory
 enter_systems() {
     local inv="inventories/lab.ini"
-    local current=""
+    local -a hosts=()
     if [ -f "$inv" ]; then
-        current=$(awk '!/^\[/ && NF {print $1}' "$inv" | paste -sd '\n' -)
+        mapfile -t hosts < <(awk '!/^\[/ && NF {print $1}' "$inv")
     fi
-    set +e
-    local hosts status
-    hosts=$(whiptail --inputbox "Enter systems list (one per line)" 20 70 "$current" 3>&1 1>&2 2>&3)
-    status=$?
-    set -e
-    [ $status -ne 0 ] && return
-    local tmp="$TMP_DIR/inventory"
-    echo "[storage_nodes]" > "$tmp"
-    echo "$hosts" | tr ',' '\n' | sed '/^\s*$/d' >> "$tmp"
-    mv "$tmp" "$inv"
-    whiptail --msgbox "Systems list saved to $inv" 8 60
+
+    while true; do
+        set +e
+        local new_host status
+        new_host=$(whiptail --inputbox "Enter system" 10 60 "" 3>&1 1>&2 2>&3)
+        status=$?
+        set -e
+        [ $status -ne 0 ] && break
+        [ -n "$new_host" ] && hosts+=("$new_host")
+
+        local list
+        list=$(printf '%s\n' "${hosts[@]}")
+        set +e
+        whiptail --yesno "Current systems:\n$list\nAdd another?" 15 60
+        status=$?
+        set -e
+        [ $status -eq 0 ] || break
+    done
+
+    if [ ${#hosts[@]} -gt 0 ]; then
+        local tmp="$TMP_DIR/inventory"
+        echo "[storage_nodes]" > "$tmp"
+        printf '%s\n' "${hosts[@]}" | sed '/^\s*$/d' >> "$tmp"
+        mv "$tmp" "$inv"
+        whiptail --title "Systems list" --textbox "$inv" 20 70
+    fi
 }
 
 apply_preset() {
