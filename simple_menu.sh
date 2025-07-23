@@ -177,20 +177,17 @@ choose_preset() {
 }
 
 while true; do
-    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 8 \
+    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 7 \
         1 "Enter Systems" \
-        2 "Collect Data" \
-        3 "Enter License" \
-        4 "Presets" \
-        5 "Install" \
-        6 "Exit" \
+        2 "Presets" \
+        3 "Install" \
+        4 "Collect Data" \
+        5 "Exit" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) enter_systems ;;
-        2) ./collect_data.sh ;;
-        3) enter_license ;;
-        4) choose_preset ;;
-        5)
+        2) choose_preset ;;
+        3)
             if check_license && check_remove_xiraid && confirm_playbook "playbooks/site.yml"; then
                 run_playbook "playbooks/site.yml" "inventories/lab.ini"
                 chmod +x post_install_menu.sh
@@ -198,6 +195,7 @@ while true; do
                 exit 0
             fi
             ;;
-        6) exit 2 ;;
+        4) ./collect_data.sh ;;
+        5) exit 2 ;;
     esac
 done
