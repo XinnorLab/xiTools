@@ -18,7 +18,7 @@ xiraid_repo_pkg: "{{ xiraid_repo_pkg_deb if ansible_os_family == 'Debian' else x
 
 # Base URLs to Xinnor repository for Ubuntu and RHEL
 xiraid_repo_url_base_deb: "https://pkg.xinnor.io/repository/Repository/xiraid/ubuntu/multi-pack"
-xiraid_repo_url_base_rpm: "https://pkg.xinnor.io/repository/Repository/xiraid/el/{{ ansible_distribution_major_version }}"
+xiraid_repo_url_base_rpm: "https://pkg.xinnor.io/repository/Repository/xiraid/el/{{ ansible_distribution_major_version }}/kver-{{ xiraid_kernel }}"
 
 # Select repository base URL according to OS family
 xiraid_repo_url_base: "{{ xiraid_repo_url_base_deb if ansible_os_family == 'Debian' else xiraid_repo_url_base_rpm }}"
