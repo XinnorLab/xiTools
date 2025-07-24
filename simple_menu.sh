@@ -204,6 +204,19 @@ confirm_perf_tuning() {
     whiptail --yesno "Run performance tuning playbook?" 8 70
 }
 
+# Convert dotted quad IP to integer
+ip_to_int() {
+    local IFS=. a b c d
+    read -r a b c d <<< "$1"
+    echo $(((a<<24)|(b<<16)|(c<<8)|d))
+}
+
+# Convert integer back to dotted quad IP
+int_to_ip() {
+    local ip=$1
+    printf "%d.%d.%d.%d" $(((ip>>24)&255)) $(((ip>>16)&255)) $(((ip>>8)&255)) $((ip&255))
+}
+
 # Prompt for a list of systems and store them in the default inventory
 enter_systems() {
     local inv="inventories/lab.ini"
@@ -228,10 +241,24 @@ enter_systems() {
             Add)
                 set +e
                 local new_host
-                new_host=$(whiptail --inputbox "Enter system" 10 60 "" 3>&1 1>&2 2>&3)
+                new_host=$(whiptail --inputbox "Enter system or IP range" 10 60 "" 3>&1 1>&2 2>&3)
                 status=$?
                 set -e
-                [ $status -eq 0 ] && [ -n "$new_host" ] && hosts+=("$new_host")
+                if [ $status -eq 0 ] && [ -n "$new_host" ]; then
+                    if [[ $new_host =~ ^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)-([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+                        local start_ip=${BASH_REMATCH[1]}
+                        local end_ip=${BASH_REMATCH[2]}
+                        local s=$(ip_to_int "$start_ip")
+                        local e=$(ip_to_int "$end_ip")
+                        if [ "$s" -le "$e" ]; then
+                            for ((ip=s; ip<=e; ip++)); do
+                                hosts+=("$(int_to_ip "$ip")")
+                            done
+                        fi
+                    else
+                        hosts+=("$new_host")
+                    fi
+                fi
                 ;;
             Remove)
                 if [ ${#hosts[@]} -eq 0 ]; then
@@ -318,7 +345,7 @@ choose_preset() {
 
 while true; do
     choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 8 \
-        1 "Enter Systems" \
+        1 "Systems list" \
         2 "Install xiRAID Classic" \
         3 "Performance Tuning" \
         4 "Collect HW Keys" \
