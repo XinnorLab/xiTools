@@ -1,0 +1,6 @@
+---
+- name: Install xiRAID Classic only
+  hosts: storage_nodes
+  gather_facts: true
+  roles:
+    - role: xiraid_classic  # EULA is accepted automatically
