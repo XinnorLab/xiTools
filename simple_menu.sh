@@ -253,8 +253,8 @@ while true; do
     case "$choice" in
         1) enter_systems ;;
         2)
-            if check_remove_xiraid && confirm_playbook "playbooks/site.yml"; then
-                run_playbook "playbooks/site.yml" "inventories/lab.ini"
+            if check_remove_xiraid && confirm_playbook "playbooks/xiraid_only.yml"; then
+                run_playbook "playbooks/xiraid_only.yml" "inventories/lab.ini"
                 chmod +x post_install_menu.sh
                 ./post_install_menu.sh
                 exit 0

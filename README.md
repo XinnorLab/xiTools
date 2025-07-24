@@ -15,7 +15,8 @@ xiTools is a set of utilities for operating system optimization and automated de
    ```
 2. Execute `startup_menu.sh` separately if you need the complete configuration menu outside of the expert mode. Any presets you create in expert mode will also be available here and in the simplified menu. It also allows setting a custom hostname.
 3. To apply the configuration, choose **Install xiRAID Classic** from the menu.
-   The playbook installs xiRAID only and runs the required roles. An **Exit** option is available if you want to leave without running the playbook.
+   This now uses `playbooks/xiraid_only.yml` to install xiRAID Classic without applying
+   additional roles. An **Exit** option is available if you want to leave without running the playbook.
    On RHEL systems follow the [installation guide](https://xinnor.io/docs/xiRAID-4.3.0/E/en/IG/installing_xiraid_classic_on_rhel.html).
 4. To configure an NFS client on another system, run `sudo ./client_setup.sh`. Root
    privileges are required to install packages, create the mount point and mount

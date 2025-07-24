@@ -384,8 +384,8 @@ while true; do
         4) edit_nfs_exports ;;
         5) configure_git_repo ;;
         6)
-            if check_remove_xiraid && confirm_playbook "playbooks/site.yml"; then
-                run_playbook "playbooks/site.yml"
+            if check_remove_xiraid && confirm_playbook "playbooks/xiraid_only.yml"; then
+                run_playbook "playbooks/xiraid_only.yml"
                 chmod +x post_install_menu.sh
                 ./post_install_menu.sh
                 exit 0
