@@ -395,7 +395,7 @@ while true; do
         5 "Git Repository Configuration" \
         6 "Install xiRAID Classic" \
         7 "Performance Tuning" \
-        8 "Collect Data" \
+        8 "Collect HW Keys" \
         9 "Exit" \
         10 "Presets" \
         3>&1 1>&2 2>&3)
@@ -412,7 +412,7 @@ while true; do
             fi
             ;;
         7) run_perf_tuning ;;
-        8) ./collect_data.sh ;;
+        8) ./collect_hw_keys.sh ;;
         9) exit 2 ;;
         10) choose_preset ;;
     esac

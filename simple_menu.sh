@@ -268,7 +268,7 @@ while true; do
         1 "Enter Systems" \
         2 "Install xiRAID Classic" \
         3 "Performance Tuning" \
-        4 "Collect Data" \
+        4 "Collect HW Keys" \
         5 "Exit" \
         6 "Presets" \
         3>&1 1>&2 2>&3)
@@ -281,7 +281,7 @@ while true; do
             fi
             ;;
         3) run_perf_tuning ;;
-        4) ./collect_data.sh ;;
+        4) ./collect_hw_keys.sh ;;
         5) exit 2 ;;
         6) choose_preset ;;
     esac

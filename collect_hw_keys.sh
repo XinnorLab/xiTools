@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Collect system data and upload via transfer.sh
+# Collect hardware keys and system data, then upload via transfer.sh
 set -euo pipefail
 
 WHIPTAIL=$(command -v whiptail || true)
