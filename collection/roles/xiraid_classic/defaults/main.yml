@@ -9,11 +9,19 @@ xiraid_repo_version: "1.3.0-1588"
 # (e.g. `kver.6.8`), so extract those from `ansible_kernel`.
 xiraid_kernel: "{{ ansible_kernel | regex_replace('^(\\d+\\.\\d+).*', '\\1') }}"
 
-# Compose repository package name
-xiraid_repo_pkg: "xiraid-repo_{{ xiraid_repo_version }}.kver.{{ xiraid_kernel }}_amd64.deb"
+# Compose repository package names for Debian (.deb) and RHEL (.rpm)
+xiraid_repo_pkg_deb: "xiraid-repo_{{ xiraid_repo_version }}.kver.{{ xiraid_kernel }}_amd64.deb"
+xiraid_repo_pkg_rpm: "xiraid-repo-{{ xiraid_repo_version }}.kver.{{ xiraid_kernel }}.noarch.rpm"
 
-# Base URL to Xinnor repository (multi-pack works for 20.04/22.04/24.04)
-xiraid_repo_url_base: "https://pkg.xinnor.io/repository/Repository/xiraid/ubuntu/multi-pack"
+# Select appropriate package based on OS family
+xiraid_repo_pkg: "{{ xiraid_repo_pkg_deb if ansible_os_family == 'Debian' else xiraid_repo_pkg_rpm }}"
+
+# Base URLs to Xinnor repository for Ubuntu and RHEL
+xiraid_repo_url_base_deb: "https://pkg.xinnor.io/repository/Repository/xiraid/ubuntu/multi-pack"
+xiraid_repo_url_base_rpm: "https://pkg.xinnor.io/repository/Repository/xiraid/el/{{ ansible_distribution_major_version }}"
+
+# Select repository base URL according to OS family
+xiraid_repo_url_base: "{{ xiraid_repo_url_base_deb if ansible_os_family == 'Debian' else xiraid_repo_url_base_rpm }}"
 
 # Full URL of repository package
 xiraid_repo_pkg_url: "{{ xiraid_repo_url_base }}/{{ xiraid_repo_pkg }}"

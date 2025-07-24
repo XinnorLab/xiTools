@@ -244,7 +244,7 @@ choose_preset() {
 while true; do
     choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 8 \
         1 "Enter Systems" \
-        2 "Install" \
+        2 "Install xiRAID Classic" \
         3 "Performance Tuning" \
         4 "Collect Data" \
         5 "Exit" \
