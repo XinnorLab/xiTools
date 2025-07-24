@@ -2,7 +2,6 @@
 #
 # The actual RAID array and filesystem configuration is stored here so
 # interactive helper scripts can modify it directly.
-xiraid_license_path: "/tmp/license"
 
 # Whether to pass `--force_metadata` when creating arrays
 # Set to `false` if metadata should not be overwritten
