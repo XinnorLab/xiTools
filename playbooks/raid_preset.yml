@@ -1,0 +1,6 @@
+---
+- name: Create RAID preset
+  hosts: storage_nodes
+  gather_facts: true
+  roles:
+    - role: raid_fs

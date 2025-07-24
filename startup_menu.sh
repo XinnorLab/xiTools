@@ -155,6 +155,50 @@ configure_raid() {
     ./configure_raid.sh
 }
 
+# Prompt for RAID parameters and create the array on all inventory systems
+raid_preset() {
+    local name level stripe devices status var_file
+
+    set +e
+    name=$(whiptail --inputbox "RAID name" 8 60 3>&1 1>&2 2>&3)
+    status=$?
+    set -e
+    [ $status -ne 0 ] && return
+
+    set +e
+    level=$(whiptail --inputbox "RAID level" 8 60 3>&1 1>&2 2>&3)
+    status=$?
+    set -e
+    [ $status -ne 0 ] && return
+
+    set +e
+    stripe=$(whiptail --inputbox "Stripe size (KB)" 8 60 3>&1 1>&2 2>&3)
+    status=$?
+    set -e
+    [ $status -ne 0 ] && return
+
+    set +e
+    devices=$(whiptail --inputbox "Space-separated devices" 8 70 3>&1 1>&2 2>&3)
+    status=$?
+    set -e
+    [ $status -ne 0 ] && return
+
+    var_file="$TMP_DIR/raid_vars.yml"
+    {
+        echo "xiraid_arrays:"
+        echo "  - name: ${name}"
+        echo "    level: ${level}"
+        echo "    strip_size_kb: ${stripe}"
+        echo "    devices:"
+        for dev in $devices; do
+            echo "      - $dev"
+        done
+        echo "xfs_filesystems: []"
+    } > "$var_file"
+
+    ansible-playbook "$REPO_DIR/playbooks/raid_preset.yml" -i inventories/lab.ini -e "@$var_file" -v
+}
+
 # Configure or update git repository under /opt/provision
 configure_git_repo() {
     local repo_dir="/opt/provision"
@@ -397,7 +441,7 @@ while true; do
         7 "Performance Tuning" \
         8 "Collect HW Keys" \
         9 "Exit" \
-        10 "Presets" \
+        10 "RAID Preset" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) configure_network ;;
@@ -414,7 +458,7 @@ while true; do
         7) run_perf_tuning ;;
         8) ./collect_hw_keys.sh ;;
         9) exit 2 ;;
-        10) choose_preset ;;
+        10) raid_preset ;;
     esac
 done
 
