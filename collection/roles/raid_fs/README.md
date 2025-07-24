@@ -7,8 +7,6 @@ Creates xiRAID arrays and tuned XFS filesystems as per Xinnor NFS RDMA blog.
 * `xiraid_force_metadata` – when `true` add `--force_metadata` to array creation.
 * `xfs_force_mkfs` – when `true` always run `mkfs.xfs` even if the filesystem and label already match. By default this is `true`, so filesystems are recreated on every run.
 
-This role requires the **mdadm** package to be installed so that any
-leftover Linux MD arrays on xiRAID devices can be stopped and wiped.
 
 All drives referenced by the array and spare pool definitions are
 cleaned using `xicli drive clean -d <device>` (or `--drives`) before
