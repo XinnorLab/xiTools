@@ -386,9 +386,7 @@ while true; do
         6)
             if check_remove_xiraid && confirm_playbook "playbooks/xiraid_only.yml"; then
                 run_playbook "playbooks/xiraid_only.yml"
-                chmod +x post_install_menu.sh
-                ./post_install_menu.sh
-                exit 0
+                whiptail --msgbox "Installation completed. Returning to main menu." 8 60 || true
             fi
             ;;
         7) run_perf_tuning ;;
