@@ -54,8 +54,5 @@ if [ "$UPDATE_ONLY" -eq 1 ]; then
     exit 0
 fi
 
-# Ensure the hardware key utility is executable
-[ -x ./hwkey ] || chmod +x ./hwkey
-
 chmod +x simple_menu.sh
 ./simple_menu.sh
