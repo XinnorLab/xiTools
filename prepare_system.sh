@@ -20,11 +20,16 @@ done
 if [ "$UPDATE_ONLY" -eq 0 ]; then
     if command -v apt-get >/dev/null 2>&1; then
         sudo apt-get update -y
-        sudo apt-get install -y ansible git whiptail dialog wget
+        # Install Ansible and supporting utilities. The json_query filter used
+        # throughout the playbooks requires the jmespath Python library which is
+        # packaged as python3-jmespath on Debian/Ubuntu systems.
+        sudo apt-get install -y ansible git whiptail dialog wget python3-jmespath
     elif command -v dnf >/dev/null 2>&1; then
-        sudo dnf install -y ansible git newt dialog wget
+        # Ensure jmespath is available for json_query filter
+        sudo dnf install -y ansible git newt dialog wget python3-jmespath
     elif command -v yum >/dev/null 2>&1; then
-        sudo yum install -y ansible git newt dialog wget
+        # Ensure jmespath is available for json_query filter
+        sudo yum install -y ansible git newt dialog wget python3-jmespath
     else
         echo "Unsupported package manager. Install ansible, git, whiptail/newt, dialog, and wget manually." >&2
         exit 1

@@ -61,9 +61,12 @@ run_playbook() {
     if ! command -v ansible-playbook >/dev/null 2>&1; then
         if command -v apt-get >/dev/null 2>&1; then
             apt-get update -y
-            apt-get install -y ansible
+            # Install jmespath to support the json_query filter used by
+            # the playbooks that may run from this script
+            apt-get install -y ansible python3-jmespath
         elif command -v yum >/dev/null 2>&1; then
-            yum install -y ansible
+            # Ensure python3-jmespath is present for json_query filter
+            yum install -y ansible python3-jmespath
         else
             echo "Ansible not found and automatic installation is unsupported." >&2
             return 1
