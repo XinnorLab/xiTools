@@ -133,14 +133,14 @@ configure_nfs_shares() {
             2 "Set Hostname" \
             3 "Configure RAID" \
             4 "Edit NFS Exports" \
-            5 "Presets" \
-            6 "Git Repository Configuration" \
-            7 "Install" \
-            8 "Exit" \
+            5 "Git Repository Configuration" \
+            6 "Install" \
+            7 "Exit" \
+            8 "Presets" \
             3>&1 1>&2 2>&3)
         case "$choice" in
             4) ./configure_nfs_exports.sh --edit "$default_path" ;;
-            8) break ;;
+            7) break ;;
         esac
     done
 }
@@ -370,21 +370,20 @@ while true; do
         2 "Set Hostname" \
         3 "Configure RAID" \
         4 "Edit NFS Exports" \
-        5 "Presets" \
-        6 "Git Repository Configuration" \
-        7 "Install" \
-        8 "Performance Tuning" \
-        9 "Collect Data" \
-        10 "Exit" \
+        5 "Git Repository Configuration" \
+        6 "Install" \
+        7 "Performance Tuning" \
+        8 "Collect Data" \
+        9 "Exit" \
+        10 "Presets" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) configure_network ;;
         2) configure_hostname ;;
         3) configure_raid ;;
         4) edit_nfs_exports ;;
-        5) choose_preset ;;
-        6) configure_git_repo ;;
-        7)
+        5) configure_git_repo ;;
+        6)
             if check_license && check_remove_xiraid && confirm_playbook "playbooks/site.yml"; then
                 run_playbook "playbooks/site.yml"
                 chmod +x post_install_menu.sh
@@ -392,9 +391,10 @@ while true; do
                 exit 0
             fi
             ;;
-        8) run_perf_tuning ;;
-        9) ./collect_data.sh ;;
-        10) exit 2 ;;
+        7) run_perf_tuning ;;
+        8) ./collect_data.sh ;;
+        9) exit 2 ;;
+        10) choose_preset ;;
     esac
 done
 

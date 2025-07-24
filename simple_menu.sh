@@ -244,16 +244,15 @@ choose_preset() {
 while true; do
     choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 8 \
         1 "Enter Systems" \
-        2 "Presets" \
-        3 "Install" \
-        4 "Performance Tuning" \
-        5 "Collect Data" \
-        6 "Exit" \
+        2 "Install" \
+        3 "Performance Tuning" \
+        4 "Collect Data" \
+        5 "Exit" \
+        6 "Presets" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) enter_systems ;;
-        2) choose_preset ;;
-        3)
+        2)
             if check_license && check_remove_xiraid && confirm_playbook "playbooks/site.yml"; then
                 run_playbook "playbooks/site.yml" "inventories/lab.ini"
                 chmod +x post_install_menu.sh
@@ -261,8 +260,9 @@ while true; do
                 exit 0
             fi
             ;;
-        4) run_perf_tuning ;;
-        5) ./collect_data.sh ;;
-        6) exit 2 ;;
+        3) run_perf_tuning ;;
+        4) ./collect_data.sh ;;
+        5) exit 2 ;;
+        6) choose_preset ;;
     esac
 done
