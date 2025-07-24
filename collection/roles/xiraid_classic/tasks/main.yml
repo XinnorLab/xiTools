@@ -5,11 +5,28 @@
     state: absent
   tags: [xiraid, cleanup]
 
-- name: Ensure kernel headers present (xiRAID DKMS needs them)
+- name: Ensure kernel headers present (Debian)
   ansible.builtin.apt:
     name: "linux-headers-{{ ansible_kernel }}"
     state: present
+  when: ansible_os_family == 'Debian'
   tags: [xiraid, deps]
+
+- name: Install kernel headers on RHEL
+  ansible.builtin.yum:
+    name: "kernel-devel-{{ ansible_kernel }}"
+    state: present
+  when: ansible_os_family == 'RedHat'
+  tags: [xiraid, deps]
+
+- name: Enable CodeReady Builder and install EPEL on RHEL
+  ansible.builtin.shell: |
+    subscription-manager repos --enable codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms
+    dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm
+  args:
+    warn: false
+  when: ansible_os_family == 'RedHat'
+  tags: [xiraid, repo]
 
 - name: Remove any existing xiRAID repo package before download
   ansible.builtin.file:
@@ -26,24 +43,42 @@
   register: xiraid_repo_dl
   tags: [xiraid, download]
 
-- name: Install xiRAID repo package
+- name: Install xiRAID repo package (Debian)
   ansible.builtin.apt:
     deb: "/tmp/{{ xiraid_repo_pkg }}"
     state: present
-  when: xiraid_repo_dl.changed
+  when: ansible_os_family == 'Debian' and xiraid_repo_dl.changed
+  register: xiraid_repo_added
+  tags: [xiraid, repo]
+
+- name: Install xiRAID repo package (RHEL)
+  ansible.builtin.yum:
+    name: "/tmp/{{ xiraid_repo_pkg }}"
+    state: present
+  when: ansible_os_family == 'RedHat' and xiraid_repo_dl.changed
   register: xiraid_repo_added
   tags: [xiraid, repo]
 
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: true
+  when: ansible_os_family == 'Debian'
   tags: [xiraid, install]
 
-- name: Install xiRAID core package
+- name: Install xiRAID core package (Debian)
   ansible.builtin.command:
     cmd: "apt-get install --reinstall -y {{ xiraid_packages | join(' ') }}"
+  when: ansible_os_family == 'Debian'
   register: xiraid_pkgs
   changed_when: false
+  tags: [xiraid, install]
+
+- name: Install xiRAID core package (RHEL)
+  ansible.builtin.yum:
+    name: "{{ xiraid_packages }}"
+    state: present
+  when: ansible_os_family == 'RedHat'
+  register: xiraid_pkgs
   tags: [xiraid, install]
 
 - name: Accept xiRAID EULA

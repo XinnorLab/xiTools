@@ -134,7 +134,7 @@ configure_nfs_shares() {
             3 "Configure RAID" \
             4 "Edit NFS Exports" \
             5 "Git Repository Configuration" \
-            6 "Install" \
+            6 "Install xiRAID Classic" \
             7 "Exit" \
             8 "Presets" \
             3>&1 1>&2 2>&3)
@@ -371,7 +371,7 @@ while true; do
         3 "Configure RAID" \
         4 "Edit NFS Exports" \
         5 "Git Repository Configuration" \
-        6 "Install" \
+        6 "Install xiRAID Classic" \
         7 "Performance Tuning" \
         8 "Collect Data" \
         9 "Exit" \
