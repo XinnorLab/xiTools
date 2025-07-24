@@ -263,16 +263,14 @@ check_remove_xiraid() {
 
     if [ "$pkg_mgr" = "apt" ]; then
         if sudo apt-get purge -y -qq --allow-change-held-packages "$pkgs" >"$log" 2>&1 \
-            && sudo apt-get autoremove -y -qq --allow-change-held-packages >>"$log" 2>&1 \
-            && sudo rm -rf /etc/xiraid >>"$log" 2>&1; then
+            && sudo apt-get autoremove -y -qq --allow-change-held-packages >>"$log" 2>&1; then
             msg="xiRAID packages removed successfully"
         else
             msg="Errors occurred during removal. See $log for details"
         fi
     else
         if sudo dnf remove -y "$pkgs" >"$log" 2>&1 \
-            && sudo dnf autoremove -y >>"$log" 2>&1 \
-            && sudo rm -rf /etc/xiraid >>"$log" 2>&1; then
+            && sudo dnf autoremove -y >>"$log" 2>&1; then
             msg="xiRAID packages removed successfully"
         else
             msg="Errors occurred during removal. See $log for details"
