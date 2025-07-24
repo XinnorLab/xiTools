@@ -18,6 +18,18 @@ xiTools is a set of utilities for operating system optimization and automated de
    This now uses `playbooks/xiraid_only.yml` to install xiRAID Classic without applying
    additional roles. An **Exit** option is available if you want to leave without running the playbook.
    On RHEL systems follow the [installation guide](https://xinnor.io/docs/xiRAID-4.3.0/E/en/IG/installing_xiraid_classic_on_rhel.html).
+   Before running the playbook make sure any previous xiRAID packages are removed.
+   On RHEL, RHEL-based or Oracle Linux systems run:
+   ```bash
+   sudo dnf remove xiraid-core && sudo dnf autoremove
+   sudo dnf remove xiraid-repo
+   ```
+   On Ubuntu or Proxmox use:
+   ```bash
+   sudo apt remove xiraid-appimage xiraid-core xiraid-kmod
+   sudo apt remove xiraid-repo
+   sudo apt autoremove
+   ```
 4. To configure an NFS client on another system, run `sudo ./client_setup.sh`. Root
    privileges are required to install packages, create the mount point and mount
    the exported share. If you only need the client pieces, copy the contents of

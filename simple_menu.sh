@@ -78,14 +78,27 @@ run_perf_tuning() {
 
 # Check for installed xiRAID packages and optionally remove them
 check_remove_xiraid() {
-    local pkgs found repo_status log=/tmp/xiraid_remove.log
-    pkgs=$(dpkg-query -W -f='${Package} ${Status}\n' 'xiraid*' 2>/dev/null | \
-        awk '$4=="installed"{print $1}')
-    repo_status=$(pkg_status xiraid-repo)
+    local pkgs found repo_status log=/tmp/xiraid_remove.log pkg_mgr
+
+    if command -v dpkg-query >/dev/null 2>&1; then
+        pkgs=$(dpkg-query -W -f='${Package} ${Status}\n' 'xiraid*' 2>/dev/null | awk '$4=="installed"{print $1}')
+        repo_status=$(pkg_status xiraid-repo)
+        pkg_mgr="apt"
+    else
+        pkgs=$(rpm -qa 'xiraid*' 2>/dev/null)
+        repo_status=$(rpm -q xiraid-repo 2>/dev/null || true)
+        pkg_mgr="dnf"
+    fi
+
     [ -n "$repo_status" ] && echo "xiraid-repo: $repo_status"
     rm -f "$log"
+
     if [ -z "$pkgs" ]; then
-        sudo apt-get autoremove -y -qq --allow-change-held-packages >"$log" 2>&1 || true
+        if [ "$pkg_mgr" = "apt" ]; then
+            sudo apt-get autoremove -y -qq --allow-change-held-packages >"$log" 2>&1 || true
+        else
+            sudo dnf autoremove -y >"$log" 2>&1 || true
+        fi
         if [ -s "$log" ]; then
             msg="Obsolete packages removed"
             if [ -n "$WHIPTAIL" ]; then
@@ -103,13 +116,24 @@ check_remove_xiraid() {
         return 1
     fi
 
-    if sudo apt-get purge -y -qq --allow-change-held-packages $pkgs >"$log" 2>&1 \
-        && sudo apt-get autoremove -y -qq --allow-change-held-packages >>"$log" 2>&1 \
-        && sudo rm -rf /etc/xiraid >>"$log" 2>&1; then
-        msg="xiRAID packages removed successfully"
+    if [ "$pkg_mgr" = "apt" ]; then
+        if sudo apt-get purge -y -qq --allow-change-held-packages "$pkgs" >"$log" 2>&1 \
+            && sudo apt-get autoremove -y -qq --allow-change-held-packages >>"$log" 2>&1 \
+            && sudo rm -rf /etc/xiraid >>"$log" 2>&1; then
+            msg="xiRAID packages removed successfully"
+        else
+            msg="Errors occurred during removal. See $log for details"
+        fi
     else
-        msg="Errors occurred during removal. See $log for details"
+        if sudo dnf remove -y "$pkgs" >"$log" 2>&1 \
+            && sudo dnf autoremove -y >>"$log" 2>&1 \
+            && sudo rm -rf /etc/xiraid >>"$log" 2>&1; then
+            msg="xiRAID packages removed successfully"
+        else
+            msg="Errors occurred during removal. See $log for details"
+        fi
     fi
+
     if [ -n "$WHIPTAIL" ]; then
         whiptail --msgbox "$msg" 8 60
     else
