@@ -53,6 +53,7 @@
   ansible.builtin.yum:
     name: "/tmp/{{ xiraid_repo_pkg }}"
     state: present
+    disable_gpg_check: true
   when: ansible_os_family == 'RedHat' and xiraid_repo_dl.changed
   register: xiraid_repo_added
   tags: [xiraid, repo]
