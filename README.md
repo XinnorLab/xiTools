@@ -5,7 +5,7 @@ xiTools is a set of utilities for operating system optimization and automated de
 ## Getting started
 
 1. Run `prepare_system.sh` on the target host (use the `-e` option for expert mode). Use `-u` to update the repository without launching any menus. The script now automatically detects Ubuntu or RedHat-based distributions and installs required packages (`yq` version 4, `whiptail`/`newt`, `ansible`, etc.) using the appropriate package manager before cloning the repository.
-   The script immediately launches a simplified start menu in default mode to choose a preset. Use `-e` to access the full interactive menu with additional options such as updating the repository or saving the current configuration as a new preset.
+   The script immediately launches a simplified start menu in default mode to choose a preset. Use `-e` to access the full interactive menu with additional options such as updating the repository or saving the current configuration as a new preset. When creating a RAID preset the menu now displays a list of optional `xicli raid create` parameters and lets you enter any desired options.
    Both menus now include a **Collect HW Keys** option that displays hardware
    keys gathered from all systems listed in the Ansible inventory using
    `xicli license show`. Each key is shown in the format
