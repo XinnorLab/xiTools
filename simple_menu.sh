@@ -138,21 +138,54 @@ enter_systems() {
     fi
 
     while true; do
-        set +e
-        local new_host status
-        new_host=$(whiptail --inputbox "Enter system" 10 60 "" 3>&1 1>&2 2>&3)
-        status=$?
-        set -e
-        [ $status -ne 0 ] && break
-        [ -n "$new_host" ] && hosts+=("$new_host")
-
         local list
         list=$(printf '%s\n' "${hosts[@]}")
         set +e
-        whiptail --yesno "Current systems:\n$list\nAdd another?" 15 60
+        local action status
+        action=$(whiptail --title "Systems" --menu "Current systems:\n$list" 20 70 10 \
+            Add "Add new system" \
+            Remove "Remove a system" \
+            Done "Finish" 3>&1 1>&2 2>&3)
         status=$?
         set -e
-        [ $status -eq 0 ] || break
+        [ $status -ne 0 ] && break
+        case "$action" in
+            Add)
+                set +e
+                local new_host
+                new_host=$(whiptail --inputbox "Enter system" 10 60 "" 3>&1 1>&2 2>&3)
+                status=$?
+                set -e
+                [ $status -eq 0 ] && [ -n "$new_host" ] && hosts+=("$new_host")
+                ;;
+            Remove)
+                if [ ${#hosts[@]} -eq 0 ]; then
+                    whiptail --msgbox "No systems to remove" 8 40
+                else
+                    local items=()
+                    for h in "${hosts[@]}"; do
+                        items+=("$h" "")
+                    done
+                    set +e
+                    local rm_host
+                    rm_host=$(whiptail --menu "Select system to remove" 20 70 10 "${items[@]}" 3>&1 1>&2 2>&3)
+                    status=$?
+                    set -e
+                    if [ $status -eq 0 ] && [ -n "$rm_host" ]; then
+                        for i in "${!hosts[@]}"; do
+                            if [ "${hosts[$i]}" = "$rm_host" ]; then
+                                unset 'hosts[i]'
+                                hosts=("${hosts[@]}")
+                                break
+                            fi
+                        done
+                    fi
+                fi
+                ;;
+            Done)
+                break
+                ;;
+        esac
     done
 
     if [ ${#hosts[@]} -gt 0 ]; then
