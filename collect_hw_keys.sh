@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# Display xiRAID hardware keys in the terminal UI
+# Display xiRAID hardware keys for systems in the inventory
 set -euo pipefail
 
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 show_hwkeys() {
-    local out="$TMP_DIR/hwkeys"
+    local inventory=$1 out="$TMP_DIR/hwkeys"
 
-    if xicli license show >"$out" 2>&1; then
-        grep -i hwkey "$out" | sed "s/^/$(hostname) : /" >"${out}.fmt"
-        mv "${out}.fmt" "$out"
+    if ! command -v ansible >/dev/null 2>&1; then
+        echo "ansible is required but not installed" >"$out"
     else
-        echo "Failed to run xicli license show" >"$out"
+        local cmd="xicli license show 2>/dev/null | grep -i hwkey | awk '{print \$NF}'"
+        ansible storage_nodes -i "$inventory" -b -m shell -a "$cmd" -o \
+            | sed -E 's/^([^ ]+) \|.*\(stdout\) */\1 : /' >"$out" || \
+            echo "Failed to collect hardware keys" >"$out"
     fi
 
     if command -v whiptail >/dev/null 2>&1; then
@@ -23,21 +25,27 @@ show_hwkeys() {
 }
 
 main() {
+    local inventory="inventories/lab.ini"
     while [ $# -gt 0 ]; do
         case $1 in
+            -i|--inventory)
+                shift
+                inventory=$1
+                ;;
             -h|--help)
-                echo "Usage: $0" >&2
+                echo "Usage: $0 [-i inventory]" >&2
                 return 0
                 ;;
             *)
                 echo "Unknown option: $1" >&2
-                echo "Usage: $0" >&2
+                echo "Usage: $0 [-i inventory]" >&2
                 return 1
                 ;;
         esac
+        shift
     done
 
-    show_hwkeys
+    show_hwkeys "$inventory"
 }
 
 main "$@"
