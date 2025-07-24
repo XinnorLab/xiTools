@@ -40,6 +40,12 @@ xiTools is a set of utilities for operating system optimization and automated de
    the script will automatically install Ansible packages when needed.
 
 The `prepare_system.sh` script installs dependencies required by the interactive helper scripts. It works on both Ubuntu and RedHat-like systems by selecting `apt`, `dnf`, or `yum` as needed. The helper scripts rely on the [`mikefarah/yq`](https://github.com/mikefarah/yq) binary (v4+). If you encounter errors such as `jq: error: env/1 is not defined`, make sure this version of `yq` is installed by re-running `prepare_system.sh` or installing it manually.
+The playbooks also use Ansible's `json_query` filter, which depends on the
+`jmespath` Python library. Recent updates to `prepare_system.sh` and
+`client_repo/client_setup.sh` automatically install the `python3-jmespath`
+package on systems using `apt`, `dnf`, or `yum`. If you see an error like
+`You need to install "jmespath" prior to running json_query filter`, rerun the
+setup scripts or install the package manually.
 Earlier versions of the RAID configuration script failed with `'//' expects 2 args but there is 1` when no spare pool existed. The script now creates the pool automatically the first time you enter devices.
 You can inspect all `yq` binaries with `which -a yq`. If multiple paths are listed, reorder your `PATH` so `/usr/local/bin/yq` precedes others or remove the older version entirely.
 
