@@ -93,12 +93,21 @@ raid_preset() {
     set -e
     [ $status -ne 0 ] && return
 
+    local extra_opts="" input
+    local opts="--adaptive_merge --single_run --block_size --cpu_allowed --init_prio --merge_write_enabled --merge_read_enabled --merge_read_max --merge_read_wait --merge_write_max --merge_write_wait --memory_limit --memory_prealloc --recon_prio --request_limit --restripe_prio --sdc_prio --sched_enabled --sparepool --force_metadata --trim --no_trim"
+    whiptail --title "Optional RAID Parameters" --scrolltext --msgbox "Supported optional parameters:\n${opts}\nRefer to docs for details." 20 70 || true
+    input=$(whiptail --inputbox "Enter optional parameters" 10 70 3>&1 1>&2 2>&3)
+    extra_opts="$input"
+
     var_file="$TMP_DIR/raid_vars.yml"
     {
         echo "xiraid_arrays:"
         echo "  - name: ${name}"
         echo "    level: ${level}"
         echo "    strip_size_kb: ${stripe}"
+        if [ -n "$extra_opts" ]; then
+            echo "    extra_opts: \"$extra_opts\""
+        fi
         echo "    devices:"
         for dev in $devices; do
             echo "      - $dev"
