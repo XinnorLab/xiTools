@@ -23,8 +23,6 @@
   ansible.builtin.shell: |
     subscription-manager repos --enable codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms
     dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm
-  args:
-    warn: false
   when: ansible_os_family == 'RedHat'
   tags: [xiraid, repo]
 
