@@ -45,7 +45,8 @@ main() {
     nvme list > "$tmp/nvme_list.txt" 2>&1 || true
     lspci > "$tmp/lspci.txt" 2>&1 || true
     [ -x ./hwkey ] || chmod +x ./hwkey
-    ./hwkey > "$tmp/hwkey.txt" 2>&1 || true
+    echo "Hardware key:"
+    ./hwkey 2>&1 || true
 
     # NUMA node for each disk
     for dev in $(lsblk -ndo NAME,TYPE | awk '$2=="disk"{print $1}'); do
