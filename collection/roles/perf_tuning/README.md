@@ -15,8 +15,8 @@ recommended in Xinnor blogs (2023-2025) and NVIDIA ConnectX-7 (400 Gbit) docs.
 
 ## Variables
 See `defaults/main.yml` for the full list; most tuning knobs can be disabled or
-altered via inventory variables. Notably, set `perf_disable_cpupower: true` to
-skip adjusting the CPU frequency governor. The `cpupower` tool is available
+altered via inventory variables. By default the CPU governor adjustment is
+disabled; set `perf_disable_cpupower: false` to enable it. The `cpupower` tool is available
 through the `linux-tools` packages on Ubuntu (e.g. `linux-tools-$(uname -r)`).
 The role installs `linux-tools-common` along with the matching
 kernel-specific package automatically.
