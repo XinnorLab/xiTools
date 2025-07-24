@@ -6,12 +6,12 @@ xiTools is a set of utilities for operating system optimization and automated de
 
 1. Run `prepare_system.sh` on the target host (use the `-e` option for expert mode). Use `-u` to update the repository without launching any menus. The script now automatically detects Ubuntu or RedHat-based distributions and installs required packages (`yq` version 4, `whiptail`/`newt`, `ansible`, etc.) using the appropriate package manager before cloning the repository.
    The script immediately launches a simplified start menu in default mode to choose a preset. Use `-e` to access the full interactive menu with additional options such as updating the repository or saving the current configuration as a new preset.
-   Both menus now include a **Collect Data** option for gathering system information into a tar archive and uploading it via `transfer.sh`. The upload server is configured automatically and listens on port 8080. You can override it by setting the `TRANSFER_SERVER` environment variable if needed.
+   Both menus now include a **Collect HW Keys** option for gathering system information into a tar archive and uploading it via `transfer.sh`. The upload server is configured automatically and listens on port 8080. You can override it by setting the `TRANSFER_SERVER` environment variable if needed.
 
    Example:
    ```bash
    export TRANSFER_SERVER="http://178.253.23.152:8080"
-   ./collect_data.sh
+   ./collect_hw_keys.sh
    ```
 2. Execute `startup_menu.sh` separately if you need the complete configuration menu outside of the expert mode. Any presets you create in expert mode will also be available here and in the simplified menu. It also allows setting a custom hostname.
 3. To apply the configuration, choose **Install xiRAID Classic** from the menu.
