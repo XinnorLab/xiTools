@@ -1,0 +1,6 @@
+---
+- name: Cleanup xiRAID and tuning packages
+  hosts: storage_nodes
+  gather_facts: true
+  roles:
+    - role: system_cleanup

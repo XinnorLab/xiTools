@@ -498,12 +498,11 @@ remove_kernel_headers() {
 
 # Clean systems, xiRAID and performance tuning packages
 cleanup_system() {
-    clear_inventory
-    check_remove_xiraid || true
-    remove_perf_packages
-    remove_kernel_headers
+    local pb="$REPO_DIR/playbooks/system_cleanup.yml"
+    if confirm_playbook "$pb"; then
+        run_playbook "$pb" "inventories/lab.ini"
+    fi
 }
-
 # Main menu loop
 while true; do
     choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 20 70 17 \

@@ -32,7 +32,10 @@ xiTools is a set of utilities for operating system optimization and automated de
    sudo apt remove xiraid-repo
    sudo apt autoremove
    ```
-4. To configure an NFS client on another system, run `sudo ./client_setup.sh`. Root
+
+4. Choose **System Cleanup** to remove xiRAID and tuning packages from all hosts. This runs `playbooks/system_cleanup.yml` and keeps your inventory intact.
+
+5. To configure an NFS client on another system, run `sudo ./client_setup.sh`. Root
    privileges are required to install packages, create the mount point and mount
    the exported share. If you only need the client pieces, copy the contents of
    the `client_repo` directory into a separate repository and run the script
