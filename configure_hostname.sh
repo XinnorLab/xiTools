@@ -36,7 +36,7 @@ vars_file="collection/roles/common/defaults/main.yml"
 
 for cmd in yq whiptail; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "Error: required command '$cmd' not found. Please run prepare_system.sh or install it manually." >&2
+        echo "Error: required command '$cmd' not found. Please run start.sh or install it manually." >&2
         exit 1
     fi
 done
