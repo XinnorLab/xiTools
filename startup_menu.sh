@@ -438,6 +438,72 @@ save_preset() {
     whiptail --msgbox "Preset saved to $pdir" 8 60
 }
 
+# Remove all systems from the default inventory after confirmation
+clear_inventory() {
+    local inv="inventories/lab.ini"
+    [ -f "$inv" ] || return
+    if whiptail --yesno "Clear systems list in $inv?" 8 60; then
+        echo "[storage_nodes]" > "$inv"
+        whiptail --msgbox "Inventory cleared" 8 40
+    fi
+}
+
+# Remove auxiliary packages installed by the performance tuning role
+remove_perf_packages() {
+    local pkgs pkg_mgr
+    if command -v dpkg-query >/dev/null 2>&1; then
+        pkgs=(cpufrequtils linux-tools-common "linux-tools-$(uname -r)" tuned)
+        pkg_mgr="apt"
+    else
+        pkgs=(tuned kernel-tools)
+        pkg_mgr="dnf"
+    fi
+
+    if ! whiptail --yesno "Remove performance tuning packages?" 8 70; then
+        return
+    fi
+
+    if [ "$pkg_mgr" = "apt" ]; then
+        sudo apt-get purge -y -qq --allow-change-held-packages "${pkgs[@]}" || true
+        sudo apt-get autoremove -y -qq --allow-change-held-packages || true
+    else
+        sudo dnf remove -y "${pkgs[@]}" || true
+        sudo dnf autoremove -y || true
+    fi
+}
+
+# Remove kernel headers packages for the running kernel
+remove_kernel_headers() {
+    local pkg pkg_mgr
+    if command -v dpkg-query >/dev/null 2>&1; then
+        pkg="linux-headers-$(uname -r)"
+        pkg_mgr="apt"
+    else
+        pkg="kernel-devel-$(uname -r)"
+        pkg_mgr="dnf"
+    fi
+
+    if dpkg-query -W "$pkg" >/dev/null 2>&1 || rpm -q "$pkg" >/dev/null 2>&1; then
+        if whiptail --yesno "Remove $pkg?" 8 60; then
+            if [ "$pkg_mgr" = "apt" ]; then
+                sudo apt-get purge -y -qq --allow-change-held-packages "$pkg" || true
+                sudo apt-get autoremove -y -qq --allow-change-held-packages || true
+            else
+                sudo dnf remove -y "$pkg" || true
+                sudo dnf autoremove -y || true
+            fi
+        fi
+    fi
+}
+
+# Clean systems, xiRAID and performance tuning packages
+cleanup_system() {
+    clear_inventory
+    check_remove_xiraid || true
+    remove_perf_packages
+    remove_kernel_headers
+}
+
 # Main menu loop
 while true; do
     choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 20 70 17 \
@@ -451,6 +517,7 @@ while true; do
         8 "Collect HW Keys" \
         9 "Exit" \
         10 "RAID Preset" \
+        11 "System Cleanup" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) configure_network ;;
@@ -468,6 +535,7 @@ while true; do
         8) ./collect_hw_keys.sh ;;
         9) exit 2 ;;
         10) raid_preset ;;
+        11) cleanup_system ;;
     esac
 done
 
