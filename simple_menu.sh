@@ -417,9 +417,9 @@ while true; do
         2 "Install xiRAID Classic" \
         3 "Performance Tuning" \
         4 "Collect HW Keys" \
-        5 "Exit" \
-        6 "RAID Preset" \
-        7 "System Cleanup" \
+        5 "RAID Preset" \
+        6 "System Cleanup" \
+        7 "Exit" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) enter_systems ;;
@@ -431,8 +431,8 @@ while true; do
             ;;
         3) run_perf_tuning ;;
         4) ./collect_hw_keys.sh ;;
-        5) exit 2 ;;
-        6) raid_preset ;;
-        7) cleanup_system ;;
+        5) raid_preset ;;
+        6) cleanup_system ;;
+        7) exit 2 ;;
     esac
 done

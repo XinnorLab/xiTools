@@ -135,12 +135,12 @@ configure_nfs_shares() {
             4 "Edit NFS Exports" \
             5 "Git Repository Configuration" \
             6 "Install xiRAID Classic" \
-            7 "Exit" \
-            8 "Presets" \
+            7 "Presets" \
+            8 "Exit" \
             3>&1 1>&2 2>&3)
         case "$choice" in
             4) ./configure_nfs_exports.sh --edit "$default_path" ;;
-            7) break ;;
+            8) break ;;
         esac
     done
 }
@@ -514,9 +514,9 @@ while true; do
         6 "Install xiRAID Classic" \
         7 "Performance Tuning" \
         8 "Collect HW Keys" \
-        9 "Exit" \
-        10 "RAID Preset" \
-        11 "System Cleanup" \
+        9 "RAID Preset" \
+        10 "System Cleanup" \
+        11 "Exit" \
         3>&1 1>&2 2>&3)
     case "$choice" in
         1) configure_network ;;
@@ -532,9 +532,9 @@ while true; do
             ;;
         7) run_perf_tuning ;;
         8) ./collect_hw_keys.sh ;;
-        9) exit 2 ;;
-        10) raid_preset ;;
-        11) cleanup_system ;;
+        9) raid_preset ;;
+        10) cleanup_system ;;
+        11) exit 2 ;;
     esac
 done
 
