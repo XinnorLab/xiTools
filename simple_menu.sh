@@ -226,13 +226,12 @@ enter_systems() {
     fi
 
     while true; do
-        local list
-        list=$(printf '%s\n' "${hosts[@]}")
         set +e
         local action status
-        action=$(whiptail --title "Systems" --menu "Current systems:\n$list" 20 70 10 \
+        action=$(whiptail --title "Systems" --menu "Manage systems list:" 20 70 10 \
             Add "Add new system" \
             Remove "Remove a system" \
+            Show "Show current list" \
             Done "Finish" 3>&1 1>&2 2>&3)
         status=$?
         set -e
@@ -282,6 +281,15 @@ enter_systems() {
                             fi
                         done
                     fi
+                fi
+                ;;
+            Show)
+                if [ ${#hosts[@]} -eq 0 ]; then
+                    whiptail --msgbox "Systems list is empty" 8 40
+                else
+                    local tmp="$TMP_DIR/sys_list"
+                    printf '%s\n' "${hosts[@]}" > "$tmp"
+                    whiptail --title "Systems list" --textbox "$tmp" 20 70
                 fi
                 ;;
             Done)
