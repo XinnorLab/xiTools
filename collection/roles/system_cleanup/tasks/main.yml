@@ -1,0 +1,84 @@
+---
+- name: Remove xiRAID packages on Debian/Ubuntu
+  ansible.builtin.apt:
+    name: "xiraid*"
+    state: absent
+    purge: yes
+    autoremove: yes
+  when: ansible_os_family == 'Debian'
+  tags: [xiraid, cleanup]
+
+- name: Remove xiRAID packages on RHEL
+  ansible.builtin.yum:
+    name: "xiraid*"
+    state: absent
+  when: ansible_os_family == 'RedHat'
+  register: xiraid_removed
+  tags: [xiraid, cleanup]
+
+- name: Autoremove packages on RHEL
+  ansible.builtin.command: dnf autoremove -y
+  when:
+    - ansible_os_family == 'RedHat'
+    - xiraid_removed is changed
+  tags: [cleanup]
+
+- name: Remove xiRAID repo package
+  ansible.builtin.package:
+    name: xiraid-repo
+    state: absent
+  tags: [xiraid, cleanup]
+
+- name: Remove performance tuning packages on Debian
+  ansible.builtin.apt:
+    name:
+      - cpufrequtils
+      - linux-tools-common
+      - "linux-tools-{{ ansible_kernel }}"
+      - tuned
+    state: absent
+    purge: yes
+    autoremove: yes
+  when: ansible_os_family == 'Debian'
+  tags: [perf, cleanup]
+
+- name: Remove performance tuning packages on RHEL
+  ansible.builtin.yum:
+    name:
+      - tuned
+      - kernel-tools
+    state: absent
+  when: ansible_os_family == 'RedHat'
+  register: perf_removed
+  tags: [perf, cleanup]
+
+- name: Autoremove performance packages on RHEL
+  ansible.builtin.command: dnf autoremove -y
+  when:
+    - ansible_os_family == 'RedHat'
+    - perf_removed is changed
+  tags: [cleanup]
+
+- name: Remove kernel headers on Debian
+  ansible.builtin.apt:
+    name: "linux-headers-{{ ansible_kernel }}"
+    state: absent
+    purge: yes
+    autoremove: yes
+  when: ansible_os_family == 'Debian'
+  tags: [kernel, cleanup]
+
+- name: Remove kernel headers on RHEL
+  ansible.builtin.yum:
+    name: "kernel-devel-{{ ansible_kernel }}"
+    state: absent
+  when: ansible_os_family == 'RedHat'
+  register: headers_removed
+  tags: [kernel, cleanup]
+
+- name: Autoremove kernel headers on RHEL
+  ansible.builtin.command: dnf autoremove -y
+  when:
+    - ansible_os_family == 'RedHat'
+    - headers_removed is changed
+  tags: [cleanup]
