@@ -16,7 +16,7 @@ vars_file="collection/roles/raid_fs/defaults/main.yml"
 # Ensure required commands are present
 for cmd in yq whiptail lsblk; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "Error: required command '$cmd' not found. Please run prepare_system.sh or install it manually." >&2
+        echo "Error: required command '$cmd' not found. Please run start.sh or install it manually." >&2
         exit 1
     fi
 done
@@ -25,7 +25,7 @@ done
 # distributions. When a v3 binary appears earlier in PATH it triggers errors
 # such as "'//' expects 2 args but there is 1" during YAML processing.
 if ! yq --version 2>/dev/null | grep -q 'version v4'; then
-    echo "Error: yq version 4.x is required. Run prepare_system.sh or adjust your PATH to use /usr/local/bin/yq" >&2
+    echo "Error: yq version 4.x is required. Run start.sh or adjust your PATH to use /usr/local/bin/yq" >&2
     command -v yq >/dev/null 2>&1 && echo "Current yq path: $(command -v yq)" >&2
     exit 1
 fi
