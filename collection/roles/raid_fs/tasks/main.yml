@@ -87,7 +87,7 @@
 
 # ----------------------- Filesystem section -------------------
 - name: Ensure XFS utils present
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name: xfsprogs
     state: present
   tags: [raid_fs, fs]
