@@ -9,3 +9,8 @@
   ansible.builtin.service:
     name: unattended-upgrades
     state: restarted
+
+- name: restart dnf-automatic
+  ansible.builtin.service:
+    name: dnf-automatic.timer
+    state: restarted

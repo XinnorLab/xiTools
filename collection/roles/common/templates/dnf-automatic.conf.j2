@@ -1,0 +1,15 @@
+# -------------------------------------------------------------
+# templates/dnf-automatic.conf.j2
+# -------------------------------------------------------------
+[commands]
+upgrade_type = default
+random_sleep = 0
+download_updates = yes
+apply_updates = yes
+
+[emitters]
+emit_via = stdio
+
+[base]
+debuglevel = 1
+

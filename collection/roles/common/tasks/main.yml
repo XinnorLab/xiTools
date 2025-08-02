@@ -1,23 +1,45 @@
 # -------------------------------------------------------------
 # tasks/main.yml
 # -------------------------------------------------------------
----
-- name: Update apt cache
+- name: Update package cache (Debian)
   ansible.builtin.apt:
     update_cache: yes
     cache_valid_time: 3600
+  when: ansible_os_family == 'Debian'
   tags: [packages]
 
-- name: Install baseline packages
+- name: Update package cache (RedHat)
+  ansible.builtin.dnf:
+    update_cache: yes
+  when: ansible_os_family == 'RedHat'
+  tags: [packages]
+
+- name: Install baseline packages (Debian)
   ansible.builtin.apt:
     name: "{{ common_packages }}"
     state: present
+  when: ansible_os_family == 'Debian'
   tags: [packages]
 
-- name: Install chrony package
+- name: Install baseline packages (RedHat)
+  ansible.builtin.dnf:
+    name: "{{ common_packages }}"
+    state: present
+  when: ansible_os_family == 'RedHat'
+  tags: [packages]
+
+- name: Install chrony package (Debian)
   ansible.builtin.apt:
     name: "{{ chrony_package_name }}"
     state: present
+  when: ansible_os_family == 'Debian'
+  tags: [ntp]
+
+- name: Install chrony package (RedHat)
+  ansible.builtin.dnf:
+    name: "{{ chrony_package_name }}"
+    state: present
+  when: ansible_os_family == 'RedHat'
   tags: [ntp]
 
 - name: Set timezone
@@ -37,6 +59,7 @@
   ansible.builtin.dpkg_selections:
     name: linux-image-generic
     selection: hold
+  when: ansible_os_family == 'Debian'
   tags: [kernel]
 
 - name: Deploy unattended‑upgrades configuration
@@ -47,6 +70,26 @@
     group: root
     mode: '0644'
   notify: restart unattended-upgrades
+  when: ansible_os_family == 'Debian'
+  tags: [security]
+
+- name: Deploy dnf-automatic configuration
+  ansible.builtin.template:
+    src: dnf-automatic.conf.j2
+    dest: /etc/dnf/automatic.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart dnf-automatic
+  when: ansible_os_family == 'RedHat'
+  tags: [security]
+
+- name: Enable and start dnf-automatic timer
+  ansible.builtin.service:
+    name: dnf-automatic.timer
+    enabled: yes
+    state: started
+  when: ansible_os_family == 'RedHat'
   tags: [security]
 
 - name: Apply sysctl parameters
