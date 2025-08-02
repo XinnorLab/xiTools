@@ -28,4 +28,4 @@ without failing.
     - raid_fs
 ```
 
-Blog reference: “How to Build High-Performance NFS Storage with xiRAID Backend and RDMA Access”, Feb 3 2025
+Blog reference: “How to Build High-Performance NFS Storage with xiRAID Backend and RDMA Access”.

@@ -20,18 +20,8 @@ xiTools is a set of utilities for operating system optimization and automated de
    This now uses `playbooks/xiraid_only.yml` to install xiRAID Classic without applying
    additional roles. An **Exit** option is available if you want to leave without running the playbook.
    On RHEL systems follow the [installation guide](https://xinnor.io/docs/xiRAID-4.3.0/E/en/IG/installing_xiraid_classic_on_rhel.html).
-   Before running the playbook make sure any previous xiRAID packages are removed.
-   On RHEL, RHEL-based or Oracle Linux systems run:
-   ```bash
-   sudo dnf remove xiraid-core && sudo dnf autoremove
-   sudo dnf remove xiraid-repo
-   ```
-   On Ubuntu or Proxmox use:
-   ```bash
-   sudo apt remove xiraid-appimage xiraid-core xiraid-kmod
-   sudo apt remove xiraid-repo
-   sudo apt autoremove
-   ```
+   Before running the playbook make sure any previous xiRAID packages are removed using
+   [`playbooks/system_cleanup.yml`](playbooks/system_cleanup.yml) or the **System Cleanup** menu option.
 
 4. Choose **System Cleanup** to remove xiRAID and tuning packages from all hosts. This runs `playbooks/system_cleanup.yml` and keeps your inventory intact.
 
@@ -42,7 +32,7 @@ xiTools is a set of utilities for operating system optimization and automated de
    from there. If you choose to install DOCA OFED using the provided playbook,
    the script will automatically install Ansible packages when needed.
 
-The `start.sh` script installs dependencies required by the interactive helper scripts. It works on both Ubuntu and RedHat-like systems by selecting `apt`, `dnf`, or `yum` as needed. The helper scripts rely on the [`mikefarah/yq`](https://github.com/mikefarah/yq) binary (v4+). If you encounter errors such as `jq: error: env/1 is not defined`, make sure this version of `yq` is installed by re-running `start.sh` or installing it manually.
+The `start.sh` script installs dependencies required by the interactive helper scripts. It works on both Ubuntu and RedHat-like systems by selecting `apt`, `dnf`, or `yum` as needed. The helper scripts rely on the [`mikefarah/yq`](https://github.com/mikefarah/yq) binary (v4+). If you encounter an error like `Error: env/1 is not defined` from `yq`, make sure this version of `yq` is installed by re-running `start.sh` or installing it manually.
 The playbooks also use Ansible's `json_query` filter, which depends on the
 `jmespath` Python library. Recent updates to `start.sh` and
 `client_repo/client_setup.sh` automatically install the `python3-jmespath`
