@@ -1,42 +1,94 @@
-- name: Ensure build dependencies are present
-  ansible.builtin.apt:
-    name:
-      - dkms
-      - build-essential
-      - linux-headers-{{ ansible_kernel }}
-      - libelf-dev
-    state: present
-  tags: [ofed, deps]
+## Debian/Ubuntu installation
+- name: Install DOCA-OFED on Debian-based systems
+  when: ansible_os_family == 'Debian'
+  block:
+    - name: Ensure build dependencies are present
+      ansible.builtin.apt:
+        name:
+          - dkms
+          - build-essential
+          - linux-headers-{{ ansible_kernel }}
+          - libelf-dev
+        state: present
+      tags: [ofed, deps]
 
-- name: Add Mellanox GPG key
-  ansible.builtin.apt_key:
-    url: "{{ doca_repo_base }}/GPG-KEY-Mellanox.pub"
-    state: present
-  tags: [ofed, repo]
+    - name: Add Mellanox GPG key
+      ansible.builtin.apt_key:
+        url: "{{ doca_repo_base }}/GPG-KEY-Mellanox.pub"
+        state: present
+      tags: [ofed, repo]
 
-- name: Add DOCA-OFED APT repo
-  ansible.builtin.apt_repository:
-    repo: "deb {{ doca_repo_base }}/{{ doca_repo_component }} /"
-    filename: "mellanox-doca"
-    state: present
-  register: repo_added
-  tags: [ofed, repo]
+    - name: Add DOCA-OFED APT repo
+      ansible.builtin.apt_repository:
+        repo: "deb {{ doca_repo_base }}/{{ doca_repo_component }} /"
+        filename: "mellanox-doca"
+        state: present
+      register: repo_added
+      tags: [ofed, repo]
 
-- name: Update APT cache (if repo added)
-  ansible.builtin.apt:
-    update_cache: yes
-  when: repo_added is changed
-  tags: [ofed, repo]
+    - name: Update APT cache (if repo added)
+      ansible.builtin.apt:
+        update_cache: yes
+      when: repo_added is changed
+      tags: [ofed, repo]
 
-- name: Install DOCA-OFED packages
-  ansible.builtin.apt:
-    name: "{{ doca_pkgs }}"
-    state: present
-    update_cache: yes
-  register: ofed_pkgs
-  notify: restart openibd
-  tags: [ofed, install]
+    - name: Install DOCA-OFED packages
+      ansible.builtin.apt:
+        name: "{{ doca_pkgs }}"
+        state: present
+        update_cache: yes
+      register: ofed_pkgs
+      notify: restart openibd
+      tags: [ofed, install]
 
+## RHEL installation
+- name: Install DOCA-OFED on RHEL-based systems
+  when: ansible_os_family == 'RedHat'
+  block:
+    - name: Ensure build dependencies are present
+      ansible.builtin.yum:
+        name:
+          - dkms
+          - kernel-devel-{{ ansible_kernel }}
+          - gcc
+          - make
+          - elfutils-libelf-devel
+        state: present
+      tags: [ofed, deps]
+
+    - name: Add Mellanox GPG key
+      ansible.builtin.rpm_key:
+        key: "{{ doca_repo_base }}/GPG-KEY-Mellanox.pub"
+        state: present
+      tags: [ofed, repo]
+
+    - name: Add DOCA-OFED YUM repo
+      ansible.builtin.yum_repository:
+        name: mellanox-doca
+        description: Mellanox DOCA Repository
+        baseurl: "{{ doca_repo_base }}/{{ doca_repo_component }}"
+        gpgkey: "{{ doca_repo_base }}/GPG-KEY-Mellanox.pub"
+        gpgcheck: yes
+        enabled: yes
+      register: repo_added
+      tags: [ofed, repo]
+
+    - name: Update YUM cache (if repo added)
+      ansible.builtin.yum:
+        update_cache: yes
+      when: repo_added is changed
+      tags: [ofed, repo]
+
+    - name: Install DOCA-OFED packages
+      ansible.builtin.yum:
+        name: "{{ doca_pkgs }}"
+        state: present
+        update_cache: yes
+      register: ofed_pkgs
+      notify: restart openibd
+      tags: [ofed, install]
+
+# UDEV script deployment (common)
 - name: Deploy InfiniBand UDEV rename script
   ansible.builtin.copy:
     src: configure_ib_udev.sh
@@ -59,3 +111,4 @@
     reboot_timeout: 1200
   when: ofed_pkgs is changed and doca_ofed_auto_reboot | bool
   tags: [ofed, reboot]
+
