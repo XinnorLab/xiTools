@@ -8,7 +8,7 @@
   tags: [xiraid, deps]
 
 - name: Install kernel headers on RHEL
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "kernel-devel-{{ ansible_kernel }}"
     state: present
   when: ansible_os_family == 'RedHat'
@@ -45,7 +45,7 @@
   tags: [xiraid, repo]
 
 - name: Install xiRAID repo package (RHEL)
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "/tmp/{{ xiraid_repo_pkg }}"
     state: present
     disable_gpg_check: true
@@ -68,7 +68,7 @@
   tags: [xiraid, install]
 
 - name: Install xiRAID core package (RHEL)
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: "{{ xiraid_packages }}"
     state: present
   when: ansible_os_family == 'RedHat'
