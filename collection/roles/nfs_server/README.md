@@ -1,6 +1,6 @@
 # Role **nfs_server**
 Installs and tunes `nfs-kernel-server` for RDMA access, with defaults based on
-Xinnor's high-performance NFS blog (Feb 3 2025).
+Xinnor's high-performance NFS blog.
 
 ## Variables
 * `nfs_threads` – thread count for exportd & nfsd (default 64).
@@ -13,4 +13,4 @@ Xinnor's high-performance NFS blog (Feb 3 2025).
     - nfs_server
 ```
 
-Reference: Xinnor blog, Feb 3 2025
+Reference: Xinnor blog
