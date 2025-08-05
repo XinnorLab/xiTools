@@ -48,14 +48,16 @@ main() {
     show_hwkeys "$inventory"
 
     if read -r -p "Activate license on all nodes? [y/N] " reply && [[ $reply =~ ^[Yy]$ ]]; then
-        local lic_path
+        local lic_path check_out
         while true; do
             read -r -p "Enter path to license file: " lic_path
-            if [ -f "$lic_path" ]; then
+            check_out="$TMP_DIR/lic_check"
+            if ansible storage_nodes -i "$inventory" -b -m shell -a "test -f '$lic_path'" -o >"$check_out"; then
                 ansible storage_nodes -i "$inventory" -b -m shell -a "xicli licence update -p '$lic_path'" -o
                 break
             else
-                echo "File not found: $lic_path"
+                echo "License file not found on all nodes: $lic_path"
+                cat "$check_out"
             fi
         done
     fi
