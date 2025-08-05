@@ -53,7 +53,7 @@ main() {
             read -r -p "Enter path to license file: " lic_path
             check_out="$TMP_DIR/lic_check"
             if ansible storage_nodes -i "$inventory" -b -m shell -a "test -f '$lic_path'" -o >"$check_out"; then
-                ansible storage_nodes -i "$inventory" -b -m shell -a "xicli licence update -p '$lic_path'" -o
+                ansible storage_nodes -i "$inventory" -b -m shell -a "xicli license update -p '$lic_path'" -o
                 break
             else
                 echo "License file not found on all nodes: $lic_path"
