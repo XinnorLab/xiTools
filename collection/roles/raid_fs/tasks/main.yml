@@ -1,4 +1,35 @@
 ---
+- name: Set raid_devices_list from inventory
+  ansible.builtin.set_fact:
+    raid_devices_list: "{{ hostvars[inventory_hostname]['raid_devices'] | default([]) }}"
+  when: hostvars[inventory_hostname]['raid_devices'] is defined
+
+- name: Set raid_devices_list from user input
+  when: raid_devices_list is not defined or raid_devices_list | length == 0
+  block:
+    - name: Gather facts from the first storage node
+      ansible.builtin.setup:
+        filter: ansible_devices*
+      delegate_to: "{{ groups['storage_nodes'][0] }}"
+      delegate_facts: true
+
+    - name: Create a list of available disks
+      ansible.builtin.set_fact:
+        available_disks: "{{ ansible_devices.keys() | map('regex_replace', '^(.*)$', '/dev/\\1') | list }}"
+
+    - name: Ask user to select disks
+      ansible.builtin.pause:
+        prompt: |
+          Please select disks for RAID array from the list below.
+          Available disks:
+          {{ available_disks | to_nice_yaml }}
+          Enter comma-separated list of disks (e.g. /dev/sda,/dev/sdb) or type 'manual' for manual input.
+      register: user_input
+
+    - name: Set raid_devices_list from user input
+      ansible.builtin.set_fact:
+        raid_devices_list: "{{ user_input.user_input.split(',') }}"
+      when: user_input.user_input != 'manual'
 
 - name: Build list of xiRAID device paths
   ansible.builtin.set_fact:
