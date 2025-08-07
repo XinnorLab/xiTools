@@ -88,11 +88,35 @@ edit_devices() {
         whiptail --msgbox "No ${label} array defined" 8 60
         return
     fi
+
+    # Create a checklist of available drives.
+    # Drives that are already part of the array will be pre-selected.
+    local all_drives
+    all_drives=$(lsblk -d -n -o NAME,SIZE | awk '{printf "/dev/%s %s OFF\n", $1, $2}')
+
+    local checklist_items
+    checklist_items=$(echo "$all_drives" | while read -r line; do
+        dev=$(echo "$line" | awk '{print $1}')
+        if [[ " ${current[*]} " =~ " $dev " ]]; then
+            echo "$line" | sed 's/OFF$/ON/'
+        else
+            echo "$line"
+        fi
+    done)
+
     set +e
-    new=$(whiptail --inputbox "Space-separated devices for ${label}" 10 70 "$current" 3>&1 1>&2 2>&3)
+    new=$(whiptail --checklist "Select devices for ${label}" 20 70 15 --separate-output $checklist_items 3>&1 1>&2 2>&3)
     status=$?
     set -e
     [ $status -ne 0 ] && return
+
+    # Allow for manual input as an advanced option
+    if [ -z "$new" ]; then
+        new=$(whiptail --inputbox "Space-separated devices for ${label} (manual)" 10 70 "$current" 3>&1 1>&2 2>&3)
+        status=$?
+        [ $status -ne 0 ] && return
+    fi
+
     tmp=$(mktemp)
     NEW_LIST="$new" yq "(.xiraid_arrays[] | select(.level==${level})).devices = (env(NEW_LIST) | split(\" \") )" "$vars_file" > "$tmp"
     backup_if_changed "$vars_file" "$tmp"
