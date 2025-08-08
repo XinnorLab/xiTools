@@ -260,6 +260,32 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
         stdscr.touchwin()
         stdscr.refresh()
 
+    def show_help(stdscr):
+        h, w = stdscr.getmaxyx()
+        win = curses.newwin(h - 4, w - 4, 2, 2)
+        win.box()
+        lines = [
+            "Arrow keys/PgUp/PgDn/Home/End: navigate",
+            "Space: toggle selection",
+            "a: toggle all in view",
+            "*: select all in view",
+            "/: search",
+            "f: filter",
+            "s: cycle sort",
+            "r: reverse sort",
+            "Enter: show details",
+            "Ctrl-S: save and exit",
+            "q or Ctrl-C: quit",
+        ]
+        for i, line in enumerate(lines[:h - 6]):
+            safe_addnstr(win, i + 1, 2, line, w - 6)
+        safe_addnstr(win, h - 5, 2, "Press any key to return", w - 6)
+        win.refresh()
+        win.getch()
+        win.clear()
+        stdscr.touchwin()
+        stdscr.refresh()
+
     def run(stdscr):
         nonlocal sort_idx, reverse, filter_text
         curses.curs_set(0)
@@ -284,7 +310,7 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
                 safe_addnstr(stdscr, idx + 1, 0, line.ljust(max_x), max_x, attr)
             status = (
                 f"{len(selected)}/{len(devs)} selected  sort:{sort_cycle[sort_idx] or 'none'}"
-                f"{' desc' if reverse else ''} filter:{filter_text}"
+                f"{' desc' if reverse else ''} filter:{filter_text}  ? for help"
             )
             safe_addnstr(stdscr, max_y - 1, 0, status.ljust(max_x), max_x, curses.A_REVERSE)
             ch = stdscr.getch()
@@ -344,6 +370,8 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
                 view = apply_view()
             elif ch in (10, curses.KEY_ENTER):
                 show_detail(stdscr, view[pos])
+            elif ch in (ord('h'), ord('?')):
+                show_help(stdscr)
             elif ch == 19:  # Ctrl-S
                 break
             elif ch in (ord('q'), 3):
