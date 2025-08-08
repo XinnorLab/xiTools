@@ -19,7 +19,11 @@ def run_menu(options, title="Menu"):
             for idx, opt in enumerate(options):
                 attr = curses.A_REVERSE if idx == selected else curses.A_NORMAL
                 stdscr.addnstr(idx + 1, 0, opt.ljust(max_x), max_x, attr)
-            ch = stdscr.getch()
+            try:
+                ch = stdscr.getch()
+            except KeyboardInterrupt:
+                selected = -1
+                break
             if ch in (curses.KEY_UP, ord('k')) and selected > 0:
                 selected -= 1
             elif ch in (curses.KEY_DOWN, ord('j')) and selected < len(options) - 1:
@@ -30,7 +34,10 @@ def run_menu(options, title="Menu"):
                 selected = -1
                 break
 
-    curses.wrapper(draw)
+    try:
+        curses.wrapper(draw)
+    except KeyboardInterrupt:
+        selected = -1
     if selected >= 0:
         print(options[selected])
         return 0
