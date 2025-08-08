@@ -135,34 +135,34 @@ store_config_repo() {
 }
 
 while true; do
-    menu_items=(
-        1 "RAID Groups information"
-        2 "xiRAID license information"
-        3 "File system and NFS share information"
-        4 "Network post install settings"
+    options=(
+        "RAID Groups information"
+        "xiRAID license information"
+        "File system and NFS share information"
+        "Network post install settings"
     )
-    save_opt=5
     if is_custom_repo && has_repo_changes; then
-        menu_items+=("$save_opt" "Store configuration to Git repository")
-        exit_opt=$((save_opt + 1))
-    else
-        exit_opt=$save_opt
+        options+=("Store configuration to Git repository")
     fi
-    menu_items+=("$exit_opt" "Exit")
+    options+=("Exit")
 
-    choice=$(whiptail --title "Post Install Menu" --menu "Select an option:" 20 70 10 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+    set +e
+    choice=$(./tui_menu.py --title "Post Install Menu" "${options[@]}")
+    status=$?
+    set -e
+    [ $status -ne 0 ] && break
     case "$choice" in
-        1) show_raid_info ;;
-        2) show_license_info ;;
-        3) show_nfs_info ;;
-        4) manage_network ;;
-        "$save_opt")
+        "RAID Groups information") show_raid_info ;;
+        "xiRAID license information") show_license_info ;;
+        "File system and NFS share information") show_nfs_info ;;
+        "Network post install settings") manage_network ;;
+        "Store configuration to Git repository")
             if is_custom_repo && has_repo_changes; then
                 store_config_repo
             else
                 break
             fi
             ;;
-        *) break ;;
+        "Exit") break ;;
     esac
 done
