@@ -6,6 +6,7 @@ import subprocess
 import sys
 import fnmatch
 import re
+import curses
 from typing import List, Dict, Any
 
 
@@ -212,6 +213,145 @@ def output_tsv(devs: List[Dict[str, Any]], si: bool):
         ]))
 
 
+def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any]]:
+    """Simple curses based TUI for selecting devices."""
+    for idx, d in enumerate(devs):
+        d['_idx'] = idx
+
+    sort_cycle = [None, 'name', 'size', 'numa', 'vendor']
+    sort_idx = 0
+    reverse = False
+    filter_text = ''
+    selected = set()
+
+    def apply_view():
+        key = sort_cycle[sort_idx]
+        items = [d for d in devs if filter_text.lower() in (d['name'] + ' ' + d['model']).lower()]
+        if key:
+            if key == 'size':
+                items.sort(key=lambda d: d['size_bytes'], reverse=reverse)
+            elif key == 'numa':
+                items.sort(key=lambda d: d['numa_node'] if d['numa_node'] is not None else -1, reverse=reverse)
+            else:
+                items.sort(key=lambda d: d[key], reverse=reverse)
+        elif reverse:
+            items.reverse()
+        return items
+
+    def show_detail(stdscr, dev):
+        h, w = stdscr.getmaxyx()
+        win = curses.newwin(h - 4, w - 4, 2, 2)
+        win.box()
+        lines = json.dumps(dev, indent=2).splitlines()
+        for i, line in enumerate(lines[:h - 6]):
+            win.addnstr(i + 1, 2, line, w - 6)
+        win.addnstr(h - 5, 2, "Press q or Esc", w - 6)
+        while True:
+            c = win.getch()
+            if c in (27, ord('q')):
+                break
+        win.clear()
+        stdscr.touchwin()
+        stdscr.refresh()
+
+    def run(stdscr):
+        nonlocal sort_idx, reverse, filter_text
+        curses.curs_set(0)
+        stdscr.keypad(True)
+        pos = 0
+        top = 0
+        view = apply_view()
+        while True:
+            max_y, max_x = stdscr.getmaxyx()
+            stdscr.erase()
+            header = ' Sel NAME              SIZE      VENDOR     MODEL            NUMA'
+            stdscr.addnstr(0, 0, header.ljust(max_x), max_x, curses.A_REVERSE)
+            visible = view[top:top + max_y - 2]
+            for idx, d in enumerate(visible):
+                mark = '✔' if d['_idx'] in selected else ' '
+                line = (
+                    f" {mark} {d['name']:<16} {human_size(d['size_bytes'], si):>8} "
+                    f"{d['vendor']:<10} {d['model']:<15} "
+                    f"{d['numa_node'] if d['numa_node'] is not None else 'N/A'}"
+                )
+                attr = curses.A_REVERSE if top + idx == pos else curses.A_NORMAL
+                stdscr.addnstr(idx + 1, 0, line.ljust(max_x), max_x, attr)
+            status = (
+                f"{len(selected)}/{len(devs)} selected  sort:{sort_cycle[sort_idx] or 'none'}"
+                f"{' desc' if reverse else ''} filter:{filter_text}"
+            )
+            stdscr.addnstr(max_y - 1, 0, status.ljust(max_x), max_x, curses.A_REVERSE)
+            ch = stdscr.getch()
+            if ch == curses.KEY_UP and pos > 0:
+                pos -= 1
+            elif ch == curses.KEY_DOWN and pos < len(view) - 1:
+                pos += 1
+            elif ch == curses.KEY_PPAGE:
+                pos = max(0, pos - (max_y - 2))
+            elif ch == curses.KEY_NPAGE:
+                pos = min(len(view) - 1, pos + (max_y - 2))
+            elif ch == curses.KEY_HOME:
+                pos = 0
+            elif ch == curses.KEY_END:
+                pos = len(view) - 1
+            elif ch == ord(' '):
+                idx = view[pos]['_idx']
+                if idx in selected:
+                    selected.remove(idx)
+                else:
+                    selected.add(idx)
+            elif ch == ord('a'):
+                for d in view:
+                    idx = d['_idx']
+                    if idx in selected:
+                        selected.remove(idx)
+                    else:
+                        selected.add(idx)
+            elif ch == ord('*'):
+                for d in view:
+                    selected.add(d['_idx'])
+            elif ch == ord('/'):  # search
+                curses.echo()
+                stdscr.addnstr(max_y - 1, 0, 'Search: '.ljust(max_x), max_x, curses.A_REVERSE)
+                q = stdscr.getstr(max_y - 1, len('Search: ')).decode()
+                curses.noecho()
+                if q:
+                    for i, d in enumerate(view):
+                        if q.lower() in (d['name'] + ' ' + d['model']).lower():
+                            pos = i
+                            break
+            elif ch == ord('f'):
+                curses.echo()
+                stdscr.addnstr(max_y - 1, 0, 'Filter: '.ljust(max_x), max_x, curses.A_REVERSE)
+                filter_text = stdscr.getstr(max_y - 1, len('Filter: ')).decode()
+                curses.noecho()
+                view = apply_view()
+                pos = 0
+                top = 0
+            elif ch == ord('s'):
+                sort_idx = (sort_idx + 1) % len(sort_cycle)
+                view = apply_view()
+                pos = 0
+                top = 0
+            elif ch == ord('r'):
+                reverse = not reverse
+                view = apply_view()
+            elif ch in (10, curses.KEY_ENTER):
+                show_detail(stdscr, view[pos])
+            elif ch == 19:  # Ctrl-S
+                break
+            elif ch in (ord('q'), 3):
+                selected.clear()
+                break
+            if pos < top:
+                top = pos
+            elif pos >= top + max_y - 2:
+                top = pos - (max_y - 3)
+        return [devs[i] for i in selected]
+
+    return curses.wrapper(run)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Display information about block devices.')
     fmt = parser.add_mutually_exclusive_group()
@@ -225,6 +365,9 @@ def main():
     parser.add_argument('--size-max', help='Maximum device size (e.g. 10T)')
     parser.add_argument('--sort', choices=['name', 'size', 'vendor', 'numa'], help='Sort output by field')
     parser.add_argument('--reverse', action='store_true', help='Reverse sort order')
+    parser.add_argument('--tui', '--interactive', dest='interactive', action='store_true',
+                        help='Interactive TUI selection mode')
+    parser.add_argument('--output', help='Write selected devices to file')
     unit = parser.add_mutually_exclusive_group()
     unit.add_argument('--si', action='store_true', help='Use 1000-based units')
     unit.add_argument('--iec', action='store_true', help='Use 1024-based units (default)')
@@ -252,17 +395,39 @@ def main():
             sys.exit(2)
 
     devs = apply_filters(devs, args)
-    sort_devices(devs, args)
+    if not args.interactive:
+        sort_devices(devs, args)
 
     si = args.si
-    if args.json:
-        output_json(devs, si)
-    elif args.yaml:
-        output_yaml(devs, si)
-    elif args.tsv:
-        output_tsv(devs, si)
+    if args.interactive:
+        selected = interactive_mode(devs, si)
+        names = [d['name'] for d in selected]
+        if args.yaml:
+            try:
+                import yaml
+            except ModuleNotFoundError:
+                print('YAML output requires PyYAML', file=sys.stderr)
+                sys.exit(2)
+            out_data = yaml.safe_dump(names, sort_keys=False)
+        elif args.tsv:
+            out_data = '\n'.join(names) + ('\n' if names else '')
+        else:
+            out_data = json.dumps(names)
+        if args.output:
+            with open(args.output, 'w') as f:
+                f.write(out_data if out_data.endswith('\n') else out_data + '\n')
+        else:
+            sys.stdout.write(out_data if out_data.endswith('\n') else out_data + '\n')
+        sys.exit(0 if names else 1)
     else:
-        output_table(devs, si)
+        if args.json:
+            output_json(devs, si)
+        elif args.yaml:
+            output_yaml(devs, si)
+        elif args.tsv:
+            output_tsv(devs, si)
+        else:
+            output_table(devs, si)
 
 
 if __name__ == '__main__':
