@@ -2,6 +2,27 @@
 
 xiTools is a set of utilities for operating system optimization and automated deployment of xiRAID Classic.
 
+## block-info
+
+The repository now includes **block-info**, a helper that collects metadata about
+local block devices. The tool relies only on standard user‑space interfaces such
+as `/sys`, `lsblk` and `udevadm` and presents the data as an aligned table by
+default. Machine‑readable formats are available through `--json`, `--yaml` and
+`--tsv` options. Devices can be filtered by type, name pattern, NUMA node or
+size, and output may be sorted by name, size, vendor or NUMA node.
+
+Examples:
+
+```bash
+# basic table of all block devices
+./block-info
+
+# JSON list of NVMe devices larger than 1 TiB
+./block-info --type=nvme --size-min=1T --json
+```
+
+Use `./block-info --help` to see the full set of options.
+
 ## Getting started
 
 1. Run `start.sh` on the target host (use the `-e` option for expert mode). Use `-u` to update the repository without launching any menus. The script now automatically detects Ubuntu or RedHat-based distributions and installs required packages (`yq` version 4, `whiptail`/`newt`, `ansible`, etc.) using the appropriate package manager before cloning the repository.
