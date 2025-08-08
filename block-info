@@ -224,6 +224,12 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
     filter_text = ''
     selected = set()
 
+    def safe_addnstr(win, y, x, text, n, attr=0):
+        try:
+            win.addnstr(y, x, text, n, attr)
+        except curses.error:
+            pass
+
     def apply_view():
         key = sort_cycle[sort_idx]
         items = [d for d in devs if filter_text.lower() in (d['name'] + ' ' + d['model']).lower()]
@@ -244,8 +250,8 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
         win.box()
         lines = json.dumps(dev, indent=2).splitlines()
         for i, line in enumerate(lines[:h - 6]):
-            win.addnstr(i + 1, 2, line, w - 6)
-        win.addnstr(h - 5, 2, "Press q or Esc", w - 6)
+            safe_addnstr(win, i + 1, 2, line, w - 6)
+        safe_addnstr(win, h - 5, 2, "Press q or Esc", w - 6)
         while True:
             c = win.getch()
             if c in (27, ord('q')):
@@ -265,7 +271,7 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
             max_y, max_x = stdscr.getmaxyx()
             stdscr.erase()
             header = ' Sel NAME              SIZE      VENDOR     MODEL            NUMA'
-            stdscr.addnstr(0, 0, header.ljust(max_x), max_x, curses.A_REVERSE)
+            safe_addnstr(stdscr, 0, 0, header.ljust(max_x), max_x, curses.A_REVERSE)
             visible = view[top:top + max_y - 2]
             for idx, d in enumerate(visible):
                 mark = '✔' if d['_idx'] in selected else ' '
@@ -275,12 +281,12 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
                     f"{d['numa_node'] if d['numa_node'] is not None else 'N/A'}"
                 )
                 attr = curses.A_REVERSE if top + idx == pos else curses.A_NORMAL
-                stdscr.addnstr(idx + 1, 0, line.ljust(max_x), max_x, attr)
+                safe_addnstr(stdscr, idx + 1, 0, line.ljust(max_x), max_x, attr)
             status = (
                 f"{len(selected)}/{len(devs)} selected  sort:{sort_cycle[sort_idx] or 'none'}"
                 f"{' desc' if reverse else ''} filter:{filter_text}"
             )
-            stdscr.addnstr(max_y - 1, 0, status.ljust(max_x), max_x, curses.A_REVERSE)
+            safe_addnstr(stdscr, max_y - 1, 0, status.ljust(max_x), max_x, curses.A_REVERSE)
             ch = stdscr.getch()
             if ch == curses.KEY_UP and pos > 0:
                 pos -= 1
@@ -312,7 +318,7 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
                     selected.add(d['_idx'])
             elif ch == ord('/'):  # search
                 curses.echo()
-                stdscr.addnstr(max_y - 1, 0, 'Search: '.ljust(max_x), max_x, curses.A_REVERSE)
+                safe_addnstr(stdscr, max_y - 1, 0, 'Search: '.ljust(max_x), max_x, curses.A_REVERSE)
                 q = stdscr.getstr(max_y - 1, len('Search: ')).decode()
                 curses.noecho()
                 if q:
@@ -322,7 +328,7 @@ def interactive_mode(devs: List[Dict[str, Any]], si: bool) -> List[Dict[str, Any
                             break
             elif ch == ord('f'):
                 curses.echo()
-                stdscr.addnstr(max_y - 1, 0, 'Filter: '.ljust(max_x), max_x, curses.A_REVERSE)
+                safe_addnstr(stdscr, max_y - 1, 0, 'Filter: '.ljust(max_x), max_x, curses.A_REVERSE)
                 filter_text = stdscr.getstr(max_y - 1, len('Filter: ')).decode()
                 curses.noecho()
                 view = apply_view()
