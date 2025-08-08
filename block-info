@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import subprocess
+import sys
+import fnmatch
+import re
+from typing import List, Dict, Any
+
+
+def human_size(num_bytes: int, si: bool = False) -> str:
+    if num_bytes is None:
+        return 'N/A'
+    base = 1000 if si else 1024
+    if num_bytes < base:
+        return f"{num_bytes} B"
+    units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"] if si else ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"]
+    for i, unit in enumerate(units[1:], 1):
+        threshold = base ** i
+        next_threshold = base ** (i + 1)
+        if num_bytes < next_threshold or i + 1 == len(units):
+            value = num_bytes / threshold
+            return f"{value:.1f} {unit}"
+    return f"{num_bytes} B"
+
+
+def parse_size(size_str: str) -> int:
+    match = re.fullmatch(r"(?i)\s*(\d+(?:\.\d+)?)([kmgtpe]?i?b?)?\s*", size_str)
+    if not match:
+        raise ValueError(f"Invalid size: {size_str}")
+    number = float(match.group(1))
+    suffix = match.group(2).lower() if match.group(2) else ''
+    multipliers = {
+        '': 1,
+        'b': 1,
+        'k': 1024,
+        'kb': 1000,
+        'ki': 1024,
+        'kib': 1024,
+        'm': 1024 ** 2,
+        'mb': 1000 ** 2,
+        'mi': 1024 ** 2,
+        'mib': 1024 ** 2,
+        'g': 1024 ** 3,
+        'gb': 1000 ** 3,
+        'gi': 1024 ** 3,
+        'gib': 1024 ** 3,
+        't': 1024 ** 4,
+        'tb': 1000 ** 4,
+        'ti': 1024 ** 4,
+        'tib': 1024 ** 4,
+        'p': 1024 ** 5,
+        'pb': 1000 ** 5,
+        'pi': 1024 ** 5,
+        'pib': 1024 ** 5,
+        'e': 1024 ** 6,
+        'eb': 1000 ** 6,
+        'ei': 1024 ** 6,
+        'eib': 1024 ** 6,
+    }
+    factor = multipliers.get(suffix)
+    if factor is None:
+        raise ValueError(f"Invalid size suffix: {suffix}")
+    return int(number * factor)
+
+
+def read_numa(name: str):
+    paths = [
+        f"/sys/block/{name}/device/numa_node",
+        f"/sys/class/nvme/{name}/device/numa_node",
+    ]
+    for p in paths:
+        try:
+            with open(p) as f:
+                val = int(f.read().strip())
+                if val >= 0:
+                    return val
+        except FileNotFoundError:
+            continue
+        except ValueError:
+            continue
+    return None
+
+
+def collect_devices() -> List[Dict[str, Any]]:
+    try:
+        out = subprocess.check_output([
+            'lsblk', '-J', '-b', '-dn', '-o', 'NAME,SIZE,MODEL,SERIAL,VENDOR,TRAN'
+        ])
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"Error running lsblk: {e}", file=sys.stderr)
+        sys.exit(2)
+    data = json.loads(out.decode())
+    devs = []
+    for dev in data.get('blockdevices', []):
+        name = dev.get('name')
+        size = dev.get('size')
+        try:
+            size = int(size) if size is not None else 0
+        except ValueError:
+            size = 0
+        vendor = (dev.get('vendor') or '').strip() or 'N/A'
+        model = (dev.get('model') or '').strip() or 'N/A'
+        serial = (dev.get('serial') or '').strip() or 'N/A'
+        tran = (dev.get('tran') or '').strip() or 'unknown'
+        numa = read_numa(name)
+        devs.append({
+            'name': f"/dev/{name}",
+            'size_bytes': size,
+            'vendor': vendor,
+            'model': model,
+            'serial': serial,
+            'tran': tran,
+            'numa_node': numa,
+        })
+    return devs
+
+
+def apply_filters(devs: List[Dict[str, Any]], args) -> List[Dict[str, Any]]:
+    res = []
+    for d in devs:
+        if args.type and d['tran'] != args.type:
+            continue
+        if args.name and not fnmatch.fnmatch(d['name'], args.name):
+            continue
+        if args.node is not None:
+            if d['numa_node'] is None or d['numa_node'] != args.node:
+                continue
+        if args.size_min is not None and d['size_bytes'] < args.size_min:
+            continue
+        if args.size_max is not None and d['size_bytes'] > args.size_max:
+            continue
+        res.append(d)
+    return res
+
+
+def sort_devices(devs: List[Dict[str, Any]], args) -> None:
+    if not args.sort:
+        if args.reverse:
+            devs.reverse()
+        return
+    key_funcs = {
+        'name': lambda d: d['name'],
+        'size': lambda d: d['size_bytes'],
+        'vendor': lambda d: d['vendor'],
+        'numa': lambda d: d['numa_node'] if d['numa_node'] is not None else -1,
+    }
+    key = key_funcs.get(args.sort)
+    devs.sort(key=key, reverse=args.reverse)
+
+
+def output_table(devs: List[Dict[str, Any]], si: bool):
+    headers = ['NAME', 'SIZE', 'BYTES', 'VENDOR', 'MODEL', 'SERIAL', 'NUMA']
+    rows = []
+    for d in devs:
+        rows.append([
+            d['name'],
+            human_size(d['size_bytes'], si),
+            str(d['size_bytes']),
+            d['vendor'],
+            d['model'],
+            d['serial'],
+            str(d['numa_node']) if d['numa_node'] is not None else 'N/A'
+        ])
+    widths = [len(h) for h in headers]
+    for row in rows:
+        for i, cell in enumerate(row):
+            if len(cell) > widths[i]:
+                widths[i] = len(cell)
+    fmt = '  '.join('{:<%d}' % w for w in widths)
+    print(fmt.format(*headers))
+    for row in rows:
+        print(fmt.format(*row))
+
+
+def output_json(devs: List[Dict[str, Any]], si: bool):
+    items = []
+    for d in devs:
+        item = dict(d)
+        item['size_human'] = human_size(d['size_bytes'], si)
+        items.append(item)
+    print(json.dumps(items, indent=2))
+
+
+def output_yaml(devs: List[Dict[str, Any]], si: bool):
+    try:
+        import yaml
+    except ModuleNotFoundError:
+        print('YAML output requires PyYAML', file=sys.stderr)
+        sys.exit(2)
+    items = []
+    for d in devs:
+        item = dict(d)
+        item['size_human'] = human_size(d['size_bytes'], si)
+        items.append(item)
+    print(yaml.safe_dump(items, sort_keys=False))
+
+
+def output_tsv(devs: List[Dict[str, Any]], si: bool):
+    headers = ['NAME', 'SIZE', 'BYTES', 'VENDOR', 'MODEL', 'SERIAL', 'NUMA']
+    print('\t'.join(headers))
+    for d in devs:
+        print('\t'.join([
+            d['name'],
+            human_size(d['size_bytes'], si),
+            str(d['size_bytes']),
+            d['vendor'],
+            d['model'],
+            d['serial'],
+            str(d['numa_node']) if d['numa_node'] is not None else 'N/A'
+        ]))
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Display information about block devices.')
+    fmt = parser.add_mutually_exclusive_group()
+    fmt.add_argument('--json', action='store_true', help='Output in JSON format')
+    fmt.add_argument('--yaml', action='store_true', help='Output in YAML format')
+    fmt.add_argument('--tsv', action='store_true', help='Output in TSV format')
+    parser.add_argument('--type', help='Filter by transport type (e.g. nvme, sata)')
+    parser.add_argument('--name', help='Filter by device name glob pattern')
+    parser.add_argument('--node', type=int, help='Filter by NUMA node')
+    parser.add_argument('--size-min', help='Minimum device size (e.g. 1G)')
+    parser.add_argument('--size-max', help='Maximum device size (e.g. 10T)')
+    parser.add_argument('--sort', choices=['name', 'size', 'vendor', 'numa'], help='Sort output by field')
+    parser.add_argument('--reverse', action='store_true', help='Reverse sort order')
+    unit = parser.add_mutually_exclusive_group()
+    unit.add_argument('--si', action='store_true', help='Use 1000-based units')
+    unit.add_argument('--iec', action='store_true', help='Use 1024-based units (default)')
+    args = parser.parse_args()
+
+    try:
+        devs = collect_devices()
+    except SystemExit:
+        raise
+    except Exception as e:
+        print(f"Error collecting device data: {e}", file=sys.stderr)
+        sys.exit(2)
+
+    if args.size_min is not None:
+        try:
+            args.size_min = parse_size(args.size_min)
+        except ValueError as e:
+            print(str(e), file=sys.stderr)
+            sys.exit(2)
+    if args.size_max is not None:
+        try:
+            args.size_max = parse_size(args.size_max)
+        except ValueError as e:
+            print(str(e), file=sys.stderr)
+            sys.exit(2)
+
+    devs = apply_filters(devs, args)
+    sort_devices(devs, args)
+
+    si = args.si
+    if args.json:
+        output_json(devs, si)
+    elif args.yaml:
+        output_yaml(devs, si)
+    elif args.tsv:
+        output_tsv(devs, si)
+    else:
+        output_table(devs, si)
+
+
+if __name__ == '__main__':
+    main()
