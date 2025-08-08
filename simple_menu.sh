@@ -420,27 +420,30 @@ cleanup_system() {
 }
 
 while true; do
-    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 15 70 9 \
-        1 "Systems list" \
-        2 "Install xiRAID Classic" \
-        3 "Performance Tuning" \
-        4 "Collect HW Keys" \
-        5 "RAID Preset" \
-        6 "System Cleanup" \
-        7 "Exit" \
-        3>&1 1>&2 2>&3)
+    set +e
+    choice=$(./tui_menu.py --title "xiNAS Setup" \
+        "Systems list" \
+        "Install xiRAID Classic" \
+        "Performance Tuning" \
+        "Collect HW Keys" \
+        "RAID Preset" \
+        "System Cleanup" \
+        "Exit")
+    status=$?
+    set -e
+    [ $status -ne 0 ] && exit 2
     case "$choice" in
-        1) enter_systems ;;
-        2)
+        "Systems list") enter_systems ;;
+        "Install xiRAID Classic")
             if check_remove_xiraid && confirm_playbook "playbooks/xiraid_only.yml"; then
                 run_playbook "playbooks/xiraid_only.yml" "inventories/lab.ini"
                 whiptail --msgbox "Installation completed. Returning to main menu." 8 60 || true
             fi
             ;;
-        3) run_perf_tuning ;;
-        4) ./collect_hw_keys.sh ;;
-        5) raid_preset ;;
-        6) cleanup_system ;;
-        7) exit 2 ;;
+        "Performance Tuning") run_perf_tuning ;;
+        "Collect HW Keys") ./collect_hw_keys.sh ;;
+        "RAID Preset") raid_preset ;;
+        "System Cleanup") cleanup_system ;;
+        "Exit") exit 2 ;;
     esac
 done

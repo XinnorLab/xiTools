@@ -505,36 +505,39 @@ cleanup_system() {
 }
 # Main menu loop
 while true; do
-    choice=$(whiptail --title "xiNAS Setup" --nocancel --menu "Choose an action:" 20 70 17 \
-        1 "Configure Network" \
-        2 "Set Hostname" \
-        3 "Configure RAID" \
-        4 "Edit NFS Exports" \
-        5 "Git Repository Configuration" \
-        6 "Install xiRAID Classic" \
-        7 "Performance Tuning" \
-        8 "Collect HW Keys" \
-        9 "RAID Preset" \
-        10 "System Cleanup" \
-        11 "Exit" \
-        3>&1 1>&2 2>&3)
+    set +e
+    choice=$(./tui_menu.py --title "xiNAS Setup" \
+        "Configure Network" \
+        "Set Hostname" \
+        "Configure RAID" \
+        "Edit NFS Exports" \
+        "Git Repository Configuration" \
+        "Install xiRAID Classic" \
+        "Performance Tuning" \
+        "Collect HW Keys" \
+        "RAID Preset" \
+        "System Cleanup" \
+        "Exit")
+    status=$?
+    set -e
+    [ $status -ne 0 ] && exit 2
     case "$choice" in
-        1) configure_network ;;
-        2) configure_hostname ;;
-        3) configure_raid ;;
-        4) edit_nfs_exports ;;
-        5) configure_git_repo ;;
-        6)
+        "Configure Network") configure_network ;;
+        "Set Hostname") configure_hostname ;;
+        "Configure RAID") configure_raid ;;
+        "Edit NFS Exports") edit_nfs_exports ;;
+        "Git Repository Configuration") configure_git_repo ;;
+        "Install xiRAID Classic")
             if check_remove_xiraid && confirm_playbook "playbooks/xiraid_only.yml"; then
                 run_playbook "playbooks/xiraid_only.yml"
                 whiptail --msgbox "Installation completed. Returning to main menu." 8 60 || true
             fi
             ;;
-        7) run_perf_tuning ;;
-        8) ./collect_hw_keys.sh ;;
-        9) raid_preset ;;
-        10) cleanup_system ;;
-        11) exit 2 ;;
+        "Performance Tuning") run_perf_tuning ;;
+        "Collect HW Keys") ./collect_hw_keys.sh ;;
+        "RAID Preset") raid_preset ;;
+        "System Cleanup") cleanup_system ;;
+        "Exit") exit 2 ;;
     esac
 done
 
