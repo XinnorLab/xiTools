@@ -421,14 +421,14 @@ cleanup_system() {
 
 while true; do
     set +e
-    choice=$(./tui_menu.py --title "xiNAS Setup" \
-        "Systems list" \
-        "Install xiRAID Classic" \
-        "Performance Tuning" \
-        "Collect HW Keys" \
-        "RAID Preset" \
-        "System Cleanup" \
-        "Exit")
+    choice=$(whiptail --title "xiNAS Setup" --menu "Select action:" 20 70 10 \
+        "Systems list" "" \
+        "Install xiRAID Classic" "" \
+        "Performance Tuning" "" \
+        "Collect HW Keys" "" \
+        "RAID Preset" "" \
+        "System Cleanup" "" \
+        "Exit" "" 3>&1 1>&2 2>&3)
     status=$?
     set -e
     [ $status -ne 0 ] && exit 2
