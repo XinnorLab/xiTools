@@ -421,17 +421,15 @@ cleanup_system() {
 
 while true; do
     set +e
-    ./tui_menu.py --title "xiNAS Setup" \
-        --output "$TMP_DIR/menu_choice" \
+    choice=$(./tui_menu.py --title "xiNAS Setup" \
         "Systems list" \
         "Install xiRAID Classic" \
         "Performance Tuning" \
         "Collect HW Keys" \
         "RAID Preset" \
         "System Cleanup" \
-        "Exit"
+        "Exit")
     status=$?
-    choice=$(cat "$TMP_DIR/menu_choice" 2>/dev/null || true)
     set -e
     [ $status -ne 0 ] && exit 2
     case "$choice" in
