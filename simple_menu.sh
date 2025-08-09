@@ -217,95 +217,7 @@ int_to_ip() {
     printf "%d.%d.%d.%d" $(((ip>>24)&255)) $(((ip>>16)&255)) $(((ip>>8)&255)) $((ip&255))
 }
 
-# Prompt for a list of systems and store them in the default inventory
-enter_systems() {
-    local inv="inventories/lab.ini"
-    local -a hosts=()
-    if [ -f "$inv" ]; then
-        mapfile -t hosts < <(awk '!/^\[/ && NF {print $1}' "$inv")
-    fi
-
-    while true; do
-        set +e
-        local action status
-        action=$(whiptail --title "Systems" --menu "Manage systems list:" 20 70 10 \
-            Add "Add new system" \
-            Remove "Remove a system" \
-            Show "Show current list" \
-            Done "Finish" 3>&1 1>&2 2>&3)
-        status=$?
-        set -e
-        [ $status -ne 0 ] && break
-        case "$action" in
-            Add)
-                set +e
-                local new_host
-                new_host=$(whiptail --inputbox "Enter system or IP range" 10 60 "" 3>&1 1>&2 2>&3)
-                status=$?
-                set -e
-                if [ $status -eq 0 ] && [ -n "$new_host" ]; then
-                    if [[ $new_host =~ ^([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)-([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-                        local start_ip=${BASH_REMATCH[1]}
-                        local end_ip=${BASH_REMATCH[2]}
-                        local s=$(ip_to_int "$start_ip")
-                        local e=$(ip_to_int "$end_ip")
-                        if [ "$s" -le "$e" ]; then
-                            for ((ip=s; ip<=e; ip++)); do
-                                hosts+=("$(int_to_ip "$ip")")
-                            done
-                        fi
-                    else
-                        hosts+=("$new_host")
-                    fi
-                fi
-                ;;
-            Remove)
-                if [ ${#hosts[@]} -eq 0 ]; then
-                    whiptail --msgbox "No systems to remove" 8 40
-                else
-                    local items=()
-                    for h in "${hosts[@]}"; do
-                        items+=("$h" "")
-                    done
-                    set +e
-                    local rm_host
-                    rm_host=$(whiptail --menu "Select system to remove" 20 70 10 "${items[@]}" 3>&1 1>&2 2>&3)
-                    status=$?
-                    set -e
-                    if [ $status -eq 0 ] && [ -n "$rm_host" ]; then
-                        for i in "${!hosts[@]}"; do
-                            if [ "${hosts[$i]}" = "$rm_host" ]; then
-                                unset 'hosts[i]'
-                                hosts=("${hosts[@]}")
-                                break
-                            fi
-                        done
-                    fi
-                fi
-                ;;
-            Show)
-                if [ ${#hosts[@]} -eq 0 ]; then
-                    whiptail --msgbox "Systems list is empty" 8 40
-                else
-                    local tmp="$TMP_DIR/sys_list"
-                    printf '%s\n' "${hosts[@]}" > "$tmp"
-                    whiptail --title "Systems list" --textbox "$tmp" 20 70
-                fi
-                ;;
-            Done)
-                break
-                ;;
-        esac
-    done
-
-    if [ ${#hosts[@]} -gt 0 ]; then
-        local tmp="$TMP_DIR/inventory"
-        echo "[storage_nodes]" > "$tmp"
-        printf '%s\n' "${hosts[@]}" | sed '/^\s*$/d' >> "$tmp"
-        mv "$tmp" "$inv"
-        whiptail --title "Systems list" --textbox "$inv" 20 70
-    fi
-}
+# Systems list editing is handled by inventory_manager.py
 
 apply_preset() {
     local preset="$1"
@@ -433,7 +345,7 @@ while true; do
     set -e
     [ $status -ne 0 ] && exit 2
     case "$choice" in
-        "Systems list") enter_systems ;;
+        "Systems list") python3 inventory_manager.py ;;
         "Install xiRAID Classic")
             if check_remove_xiraid && confirm_playbook "playbooks/xiraid_only.yml"; then
                 run_playbook "playbooks/xiraid_only.yml" "inventories/lab.ini"
