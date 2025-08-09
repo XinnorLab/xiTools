@@ -136,18 +136,18 @@ store_config_repo() {
 
 while true; do
     options=(
-        "RAID Groups information"
-        "xiRAID license information"
-        "File system and NFS share information"
-        "Network post install settings"
+        "RAID Groups information" ""
+        "xiRAID license information" ""
+        "File system and NFS share information" ""
+        "Network post install settings" ""
     )
     if is_custom_repo && has_repo_changes; then
-        options+=("Store configuration to Git repository")
+        options+=("Store configuration to Git repository" "")
     fi
-    options+=("Exit")
+    options+=("Exit" "")
 
     set +e
-    choice=$(./tui_menu.py --title "Post Install Menu" "${options[@]}")
+    choice=$(whiptail --title "Post Install Menu" --menu "Select action:" 20 70 10 "${options[@]}" 3>&1 1>&2 2>&3)
     status=$?
     set -e
     [ $status -ne 0 ] && break
