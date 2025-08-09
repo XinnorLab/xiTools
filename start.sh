@@ -39,8 +39,8 @@ if [ "$UPDATE_ONLY" -eq 0 ]; then
     sudo chmod +x /usr/local/bin/yq
 fi
 
-REPO_URL="https://github.com/XinnorLab/xiNAS/"
-REPO_DIR="xiNAS"
+REPO_URL="https://github.com/XinnorLab/xiTools/"
+REPO_DIR="xiTools"
 
 # Determine if repo already exists in current directory
 if [ -f "ansible.cfg" ] && [ -d "playbooks" ]; then
