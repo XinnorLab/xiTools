@@ -5,21 +5,7 @@ import curses
 import sys
 
 
-def run_menu(options, title="Menu", output=None):
-    """Run a simple curses menu.
-
-    Parameters
-    ----------
-    options: list[str]
-        List of options to present to the user.
-    title: str
-        Title displayed at the top of the menu.
-    output: file-like object or None
-        When provided, the selected option will be written to this file
-        instead of standard output. This allows callers to keep stdout
-        attached to the terminal for curses while capturing the result
-        via a different file descriptor.
-    """
+def run_menu(options, title="Menu"):
     selected = 0
 
     def draw(stdscr):
@@ -53,8 +39,7 @@ def run_menu(options, title="Menu", output=None):
     except KeyboardInterrupt:
         selected = -1
     if selected >= 0:
-        target = output if output is not None else sys.stdout
-        print(options[selected], file=target)
+        print(options[selected])
         return 0
     return 1
 
@@ -63,16 +48,8 @@ def main():
     parser = argparse.ArgumentParser(description="Display a simple curses menu")
     parser.add_argument("options", nargs="+", help="Menu options")
     parser.add_argument("--title", default="Menu", help="Menu title")
-    parser.add_argument("--output", help="File to write the selected option to")
     args = parser.parse_args()
-
-    out_file = open(args.output, "w") if args.output else None
-    try:
-        rc = run_menu(args.options, args.title, out_file)
-    finally:
-        if out_file is not None:
-            out_file.close()
-    sys.exit(rc)
+    sys.exit(run_menu(args.options, args.title))
 
 
 if __name__ == "__main__":
