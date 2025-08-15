@@ -9,6 +9,7 @@ Utility to run fio benchmarks on unused NVMe namespaces.
     * direct I/O
     * iodepth 32, numjobs 4
     * offset increment 10%
+    * runtime 60s
 - outputs a simple table with bandwidth and IOPS
 """
 import json
@@ -17,6 +18,8 @@ import shutil
 import subprocess
 import sys
 from typing import List, Tuple, Optional
+
+RUNTIME_SECONDS = 60  # run each fio test for 1 minute
 
 
 def _is_unused(dev: dict) -> bool:
@@ -71,6 +74,8 @@ def run_fio(dev: str, mode: str) -> Tuple[Optional[float], Optional[float]]:
         "--iodepth=32",
         "--numjobs=4",
         "--offset_increment=10%",
+        "--time_based",
+        f"--runtime={RUNTIME_SECONDS}",
         "--output-format=json",
     ]
     try:
