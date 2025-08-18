@@ -13,6 +13,7 @@ Utility to run fio benchmarks on unused NVMe namespaces.
     * runtime 60s
 - outputs a simple table with bandwidth and IOPS
 """
+import argparse
 import json
 import os
 import shutil
@@ -104,7 +105,9 @@ def discover_nvme_namespaces() -> List[str]:
     return namespaces
 
 
-def run_fio(dev: str, mode: str) -> Tuple[Optional[float], Optional[float]]:
+def run_fio(
+    dev: str, mode: str, debug: bool = False
+) -> Tuple[Optional[float], Optional[float]]:
     """Run fio for given device and mode (read/write).
 
     Returns tuple of (bandwidth_MB_s, iops)."""
@@ -131,6 +134,10 @@ def run_fio(dev: str, mode: str) -> Tuple[Optional[float], Optional[float]]:
     except (OSError, subprocess.CalledProcessError) as exc:
         print(f"fio {mode} on {dev} failed: {exc}", file=sys.stderr)
         return None, None
+
+    if debug:
+        print(f"fio {mode} output for {dev}:\n{out}")
+
     try:
         data = json.loads(out)
         job = data.get("jobs", [{}])[0][mode]
@@ -142,6 +149,15 @@ def run_fio(dev: str, mode: str) -> Tuple[Optional[float], Optional[float]]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Run fio benchmarks on NVMe devices")
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Show raw fio output for each disk",
+    )
+    args = parser.parse_args()
+
     if shutil.which("fio") is None:
         print("fio not found in PATH", file=sys.stderr)
         return 1
@@ -155,8 +171,8 @@ def main() -> int:
 
     results = []
     for dev in devs:
-        read_bw, read_iops = run_fio(dev, "read")
-        write_bw, write_iops = run_fio(dev, "write")
+        read_bw, read_iops = run_fio(dev, "read", args.debug)
+        write_bw, write_iops = run_fio(dev, "write", args.debug)
         results.append((dev, read_bw, read_iops, write_bw, write_iops))
 
     header = "{:<15} {:>15} {:>12} {:>15} {:>12}".format(
