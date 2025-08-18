@@ -128,6 +128,7 @@ def run_fio(
         "--time_based",
         f"--runtime={RUNTIME_SECONDS}",
         "--output-format=json",
+        "--group_reporting",
     ]
     try:
         out = subprocess.check_output(cmd, text=True)
