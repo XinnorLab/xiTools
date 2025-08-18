@@ -7,6 +7,7 @@ import sys
 import fnmatch
 import re
 import curses
+from decimal import Decimal, InvalidOperation
 from typing import List, Dict, Any
 
 
@@ -30,7 +31,10 @@ def parse_size(size_str: str) -> int:
     match = re.fullmatch(r"(?i)\s*(\d+(?:\.\d+)?)([kmgtpe]?i?b?)?\s*", size_str)
     if not match:
         raise ValueError(f"Invalid size: {size_str}")
-    number = float(match.group(1))
+    try:
+        number = Decimal(match.group(1))
+    except InvalidOperation:
+        raise ValueError(f"Invalid size: {size_str}")
     suffix = match.group(2).lower() if match.group(2) else ''
     multipliers = {
         '': 1,
