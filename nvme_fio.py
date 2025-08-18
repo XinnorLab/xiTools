@@ -3,6 +3,7 @@
 Utility to run fio benchmarks on unused NVMe namespaces.
 
 - discovers NVMe namespaces that are not part of any filesystem or LVM
+- allows the user to interactively choose which of those namespaces to test
 - runs sequential read and write tests with fio
     * 128k block size
     * libaio ioengine
@@ -20,6 +21,53 @@ import sys
 from typing import List, Tuple, Optional
 
 RUNTIME_SECONDS = 60  # run each fio test for 1 minute
+
+
+def select_namespaces(namespaces: List[str]) -> List[str]:
+    """Prompt the user to choose which namespaces to test."""
+    print("Found the following NVMe namespaces:")
+    for dev in namespaces:
+        print(f"  - {dev}")
+    print()
+    print("Where to conduct testing?")
+    print("1) All disks")
+    print("2) First N disks")
+    print("3) Specific disks")
+    choice = input("Choose an option [1-3]: ").strip()
+    if choice == "1":
+        selected = namespaces
+    elif choice == "2":
+        n_str = input("Enter N: ").strip()
+        try:
+            n = int(n_str)
+        except ValueError:
+            print("Invalid value for N.", file=sys.stderr)
+            return []
+        if n < 1 or n > len(namespaces):
+            print("Invalid value for N.", file=sys.stderr)
+            return []
+        selected = namespaces[:n]
+    elif choice == "3":
+        names = input(
+            "Enter disk names separated by space (e.g., nvme0n1 nvme1n1): "
+        ).split()
+        selected = []
+        for name in names:
+            disk = f"/dev/{name}" if not name.startswith("/dev/") else name
+            if disk in namespaces:
+                selected.append(disk)
+            else:
+                print(f"Disk {disk} not found.", file=sys.stderr)
+        if not selected:
+            print("No valid disk selected.", file=sys.stderr)
+            return []
+    else:
+        print("Unknown option.", file=sys.stderr)
+        return []
+    print("Selected disks for testing:")
+    for dev in selected:
+        print(f"  - {dev}")
+    return selected
 
 
 def _is_unused(dev: dict) -> bool:
@@ -100,6 +148,9 @@ def main() -> int:
     devs = discover_nvme_namespaces()
     if not devs:
         print("No unused NVMe namespaces found", file=sys.stderr)
+        return 1
+    devs = select_namespaces(devs)
+    if not devs:
         return 1
 
     results = []
