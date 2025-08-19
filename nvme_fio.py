@@ -157,7 +157,68 @@ def main() -> int:
         action="store_true",
         help="Show raw fio output for each disk",
     )
+    parser.add_argument(
+        "--complex",
+        action="store_true",
+        help="Run extended matrix of fio tests with scoring",
+    )
+    parser.add_argument(
+        "--allow-write",
+        action="store_true",
+        help="Enable write and mixed workloads in complex mode",
+    )
+    parser.add_argument(
+        "--profile",
+        choices=["throughput", "iops", "parity"],
+        default="throughput",
+        help="Scoring profile to use in complex mode",
+    )
+    parser.add_argument("--top", type=int, default=0, help="Show N best devices")
+    parser.add_argument(
+        "--bottom", type=int, default=0, help="Show N worst devices"
+    )
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=3,
+        help="Number of repetitions for each fio workload in complex mode",
+    )
+    parser.add_argument(
+        "--qd",
+        type=int,
+        nargs="*",
+        default=None,
+        help="Queue depths to sweep for random workloads",
+    )
+    parser.add_argument(
+        "--bs",
+        type=str,
+        nargs="*",
+        default=None,
+        help="Block sizes to test (currently used for future extensions)",
+    )
+    parser.add_argument(
+        "--export",
+        nargs="*",
+        choices=["json", "csv", "yaml"],
+        help="Export results in given formats",
+    )
+    parser.add_argument(
+        "--no-smart",
+        action="store_true",
+        help="Skip SMART data collection",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Do not execute fio, useful for testing",
+    )
     args = parser.parse_args()
+
+    if args.complex:
+        from complex_fio import run_complex
+
+        return run_complex(args)
 
     if shutil.which("fio") is None:
         print("fio not found in PATH", file=sys.stderr)
