@@ -209,9 +209,16 @@ def build_test_matrix(allow_write: bool, qd_sweep: List[int]) -> List[FioTest]:
 # --------------------------- execution -------------------------------------
 
 
+class FioRuntimeError(RuntimeError):
+    """Raised when fio execution fails."""
+
+
 def _run_fio_once(cmd: List[str]) -> Dict[str, float]:
     """Execute fio command and return basic metrics."""
-    out = subprocess.check_output(cmd, text=True)
+    try:
+        out = subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as exc:
+        raise FioRuntimeError(exc.output.strip()) from exc
     data = json.loads(out)
     job = data.get("jobs", [{}])[0]
     result: Dict[str, float] = {}
@@ -372,7 +379,12 @@ def run_complex(args: argparse.Namespace) -> int:
             report.smart = collect_smart(dev)
             smart_prefilter(report)
         for test in tests:
-            result = run_test(dev, test, args.repeat, args.dry_run)
+            try:
+                result = run_test(dev, test, args.repeat, args.dry_run)
+            except FioRuntimeError as exc:
+                report.reasons.append(f"fio error: {exc}")
+                report.results.clear()
+                break
             report.results[test.name] = result
         reports.append(report)
     apply_scoring(reports, args.profile)
