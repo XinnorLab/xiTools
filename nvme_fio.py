@@ -160,7 +160,11 @@ def main() -> int:
     parser.add_argument(
         "--complex",
         action="store_true",
-        help="Run extended matrix of fio tests with scoring",
+        help=(
+            "Run extended matrix of fio tests with scoring. "
+            "A summary is printed after execution; use --export to save "
+            "detailed results"
+        ),
     )
     parser.add_argument(
         "--allow-write",
@@ -201,7 +205,10 @@ def main() -> int:
         "--export",
         nargs="*",
         choices=["json", "csv", "yaml"],
-        help="Export results in given formats",
+        help=(
+            "Export results in given formats to the 'report/' directory "
+            "(e.g. report/results.json)"
+        ),
     )
     parser.add_argument(
         "--no-smart",
